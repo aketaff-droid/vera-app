@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {getVersion} from '@tauri-apps/api/app';
 import {api, inTauri, listen, type AppState, type Appearance, type Library, type Settings as S, type UpdateInfo} from '../api';
 import {plural, when} from '../format';
-import {accentOrder, accents, effective} from '../theme';
+import {accentName, accentOrder, effective, themeOrder, themes, tone} from '../theme';
 
 const Switch = ({on, label, toggle}: {on: boolean; label: string; toggle: () => void}) =>
   <button className="switch" role="switch" aria-checked={on} aria-label={label} onClick={toggle}><span/></button>;
@@ -13,9 +13,9 @@ function Segmented<T extends string>({label, value, options, onChange}: {label: 
   </span>;
 }
 
-export function Settings({state, library, save, changeFolder, journal}: {state: AppState; library: Library; save: (s: S) => Promise<void>; changeFolder: () => void; journal: () => void}) {
+export function Settings({state, library, save, changeFolder, journal, tour}: {state: AppState; library: Library; save: (s: S) => Promise<void>; changeFolder: () => void; journal: () => void; tour: () => void}) {
   const s = state.settings;
-  const [version, setVersion] = useState('2.5.0');
+  const [version, setVersion] = useState('2.6.0');
   useEffect(() => {if (inTauri) void getVersion().then(setVersion);}, []);
   const folderState = state.folder.error ? 'Introuvable : Google Drive est-il lancé ?'
     : `Surveillé · ${plural(library.books.length, 'livre', 'livres')} · ${plural(library.collections.filter(c => !c.parent).length, 'collection', 'collections')}`;
@@ -59,10 +59,28 @@ export function Settings({state, library, save, changeFolder, journal}: {state: 
     <section>
       <h2 className="gh">Apparence</h2>
       <div className="grp">
-        <div className="line"><span className="two"><span>Couleur d’accent</span><small>{accents[s.accent]?.name}</small></span>
+        <div className="line themes-line"><span className="two"><span>Thème</span><small>{themes[s.theme]?.note}. La lecture garde ses propres fonds.</small></span></div>
+        <div className="theme-cards" role="radiogroup" aria-label="Thème">
+          {themeOrder.map(id => {
+            const t = themes[id], mode = effective(s.appearance), p = t.surfaces[mode];
+            return <button key={id} className="theme-card" role="radio" aria-checked={id === s.theme} onClick={() => void save({...s, theme: id, accent: 'maison'})}>
+              <span className={`theme-preview tp-${id}`} style={{background: p.bg, color: p.ink, borderColor: p.line}} aria-hidden="true">
+                <span className="tp-side" style={{background: p.card}}/>
+                <span className="tp-title" style={{fontFamily: t.display}}>Aa</span>
+                <span className="tp-lines"><i style={{background: p.ink}}/><i style={{background: p.muted}}/></span>
+                <span className="tp-dot" style={{background: t.accent[mode].fill}}/>
+              </span>
+              <span className="theme-name">{t.name}</span>
+            </button>;
+          })}
+        </div>
+        <div className="line"><span className="two"><span>Couleur d’accent</span><small>{accentName(s.accent, s.theme)}</small></span>
           <span className="swatches" role="radiogroup" aria-label="Couleur d’accent">
-            {accentOrder.map(a => <button key={a} className="swatch" role="radio" aria-checked={a === s.accent} aria-label={accents[a].name} title={accents[a].name}
-              style={{background: accents[a][effective(s.appearance)].fill, ['--swatch' as string]: accents[a][effective(s.appearance)].fill}} onClick={() => void save({...s, accent: a})}/>)}
+            {accentOrder.map(a => {
+              const fill = tone(s.theme, a, effective(s.appearance)).fill;
+              return <button key={a} className={`swatch${a === 'maison' ? ' maison' : ''}`} role="radio" aria-checked={a === s.accent} aria-label={accentName(a, s.theme)} title={accentName(a, s.theme)}
+                style={{background: fill, ['--swatch' as string]: fill}} onClick={() => void save({...s, accent: a})}/>;
+            })}
           </span></div>
         <div className="line"><span className="two"><span>Apparence</span>
           <small>{s.appearance === 'auto' ? `Suit Windows : actuellement ${effective('auto') === 'dark' ? 'sombre' : 'clair'}` : 'Ne suit plus Windows'}</small></span>
@@ -75,6 +93,7 @@ export function Settings({state, library, save, changeFolder, journal}: {state: 
       <div className="grp">
         <div className="line"><span>Version</span><span className="value">Vera {version}</span></div>
         <Update available={state.update}/>
+        <button className="line" onClick={tour}>Revoir la visite guidée<span className="value">›</span></button>
         <button className="line" onClick={() => void api.openData()}>Ouvrir le dossier des données de Vera<span className="value">›</span></button>
       </div>
       <p className="footnote">Notices et licences : dossier « notices » de l’installation. Sauvegardes du catalogue de la Kobo : dossier « backups » des données.</p>

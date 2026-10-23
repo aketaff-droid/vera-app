@@ -1,6 +1,6 @@
 // Browser preview only (`npm run dev`): a stand-in for Vera's engine with sample books, never part of the
 // application. Scenarios by URL: ?s=onboarding | drive | full | broken | empty | low (Kobo nearly full),
-// and ?accent=blue&mode=dark.
+// and ?accent=blue&mode=dark, ?theme=papier.
 // window.vera.plug() simulates a Kobo being plugged in.
 import type {AppState, Book, Detail, KoboState, Library, Metadata, Reading, Report, Settings, Step} from '../api';
 // Sample files for the reader: the test fixtures (a fictitious corpus, no real book).
@@ -48,7 +48,7 @@ function collections(): Library['collections'] {
 }
 
 const settings: Settings = {watchDir: scenario === 'onboarding' ? null : 'G:\\Mon Drive\\Livres', autostart: true, koboSync: true,
-  accent: (params.get('accent') as Settings['accent']) ?? 'orange', appearance: (params.get('mode') as Settings['appearance']) ?? 'light', replaceEdited: false, onboarded: scenario !== 'onboarding',
+  accent: (params.get('accent') as Settings['accent']) ?? (params.get('theme') ? 'maison' : 'orange'), theme: (params.get('theme') as Settings['theme']) ?? 'vera', appearance: (params.get('mode') as Settings['appearance']) ?? 'light', replaceEdited: false, onboarded: scenario !== 'onboarding', toured: !params.get('tour'),
   reader: {size: 19, theme: (params.get('reader') as Settings['reader']['theme']) ?? 'papier', font: 'serif'},
   // ?share=linked: an address and a Discord channel already linked.
   share: params.get('share') === 'linked'

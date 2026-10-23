@@ -1,5 +1,5 @@
 /* Vera — one quiet surface in the spirit of Apple, an accent colour as on macOS, and the books' own colours
-   for what is featured (docs/DECISIONS.md, section K). Colours come from theme.ts as CSS variables. Every
+   for what is featured (docs/DECISIONS.md, sections K and P; the themes are at the end of this file). Colours come from theme.ts as CSS variables. Every
    movement has a reduced-motion form. */
 
 :root {
@@ -30,7 +30,7 @@ a { color: inherit; }
 .side { position: relative; z-index: 1; flex: none; width: 240px; padding: 14px 10px 14px; background: var(--side);
   backdrop-filter: blur(40px) saturate(1.8); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 18px; overflow: auto; }
 .mark { display: flex; align-items: center; gap: 10px; padding: 4px 10px 2px; }
-.mark .app-icon { width: 26px; height: 26px; border-radius: 7px; }
+.mark .app-icon { width: 26px; height: 26px; border-radius: 22%; box-shadow: none; }
 .mark span { font: 700 17px var(--display); letter-spacing: -.01em; }
 .side-group { display: flex; flex-direction: column; gap: 1px; }
 .side-label { padding: 0 10px 4px; font-size: 11px; font-weight: 600; color: var(--faint); }
@@ -238,8 +238,7 @@ button:disabled { opacity: .5; cursor: default; }
 .footnote { margin: 2px 12px 0; font-size: 12px; color: var(--muted); }
 
 /* ——— First launch, empty states, alerts ——— */
-.app-icon { display: inline-flex; align-items: center; justify-content: center; border-radius: 22%; color: #fff;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 80%, #fff), color-mix(in srgb, var(--accent) 85%, #000)); box-shadow: 0 6px 18px -6px var(--shadow); }
+.app-icon { display: block; border-radius: 22%; box-shadow: 0 6px 18px -6px var(--shadow); }
 .center { position: relative; flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .step { width: 540px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; animation: rise 420ms var(--ease); }
 .step.wide { width: 640px; }
@@ -533,3 +532,108 @@ button.chip:not(.on) { background: var(--field); color: var(--ink); font-weight:
 .update-bar { display: block; height: 6px; margin-top: 4px; border-radius: 6px; background: var(--field); overflow: hidden; }
 .update-bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width 150ms linear; }
 .grp small.warn { color: var(--warn); }
+
+/* ——— Collections folded in the sidebar ——— */
+.side-label.fold { display: flex; align-items: center; gap: 4px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.side-label.fold:hover { color: var(--muted); }
+.chev { flex: none; display: inline-flex; transition: transform 200ms var(--ease); }
+.chev.closed { transform: rotate(-90deg); }
+.side-tree { position: relative; display: flex; flex-direction: column; }
+.side-tree > .twist { position: absolute; top: 3px; z-index: 1; width: 22px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--faint);
+  display: flex; align-items: center; justify-content: center; }
+.side-tree > .twist:hover { background: var(--selBg); color: var(--ink); }
+.side-kids { display: flex; flex-direction: column; gap: 1px; }
+@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+
+/* ——— Themes (docs/DECISIONS.md, section P). The reader keeps its own look. ——— */
+.reader { font-family: var(--ui); --ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; --display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif; }
+
+/* Papier: cream paper with a faint grain, serif titles. */
+.th-papier .app { background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E"); }
+.th-papier .h1, .th-papier .sec, .th-papier .hero-line, .th-papier .mark span, .th-papier .sheet-title .t, .th-papier .coll .name { font-weight: 600; letter-spacing: -.01em; }
+.th-papier .h1 { font-size: 36px; }
+.th-papier .toolbar { background: color-mix(in srgb, var(--bg) 90%, transparent); }
+.th-papier .cover { border-radius: 2px; box-shadow: 0 1px 2px rgba(60,40,15,.18), 0 12px 24px -12px var(--shadow); }
+.th-papier .side { backdrop-filter: none; }
+
+/* Citadelle: stone or vellum, gold rules, engraved capitals, framed pictures. Original: no game's names or marks. */
+.th-citadelle .h1, .th-citadelle .sec, .th-citadelle .hero-line, .th-citadelle .mark span, .th-citadelle .sheet-title .t, .th-citadelle .coll .name {
+  font-weight: 600; letter-spacing: .04em; }
+.th-citadelle .h1 { font-size: 32px; }
+.th-citadelle .sec { font-size: 19px; }
+.th-citadelle .sec::after { content: ''; flex: 1; align-self: center; height: 1px; margin-left: 10px; background: linear-gradient(90deg, var(--accentText), transparent); opacity: .5; }
+.th-citadelle.md-dark .app { background: radial-gradient(120% 80% at 50% -20%, #221d16 0%, transparent 60%), var(--bg); }
+.th-citadelle .side { backdrop-filter: none; border-right: 1px solid color-mix(in srgb, var(--accentText) 40%, transparent);
+  box-shadow: inset -4px 0 0 -3px color-mix(in srgb, var(--accentText) 22%, transparent); }
+.th-citadelle .side-label { font-family: var(--display); letter-spacing: .12em; color: var(--accentText); }
+.th-citadelle .side-row[aria-current='page'] { background: var(--selBg); box-shadow: inset 2px 0 0 var(--accentText); border-radius: 2px; }
+.th-citadelle .hero { border-radius: 3px; }
+.th-citadelle .hero::before { content: ''; position: absolute; inset: 6px; z-index: 0; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M1 13 L13 1 L25 13 L13 25 Z' fill='%23231c12' stroke='%23e8c880' stroke-width='1.2'/%3E%3Cpath d='M8 13 L13 8 L18 13 L13 18 Z' fill='%23e8c880'/%3E%3C/svg%3E") left top no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M1 13 L13 1 L25 13 L13 25 Z' fill='%23231c12' stroke='%23e8c880' stroke-width='1.2'/%3E%3Cpath d='M8 13 L13 8 L18 13 L13 18 Z' fill='%23e8c880'/%3E%3C/svg%3E") right top no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M1 13 L13 1 L25 13 L13 25 Z' fill='%23231c12' stroke='%23e8c880' stroke-width='1.2'/%3E%3Cpath d='M8 13 L13 8 L18 13 L13 18 Z' fill='%23e8c880'/%3E%3C/svg%3E") left bottom no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M1 13 L13 1 L25 13 L13 25 Z' fill='%23231c12' stroke='%23e8c880' stroke-width='1.2'/%3E%3Cpath d='M8 13 L13 8 L18 13 L13 18 Z' fill='%23e8c880'/%3E%3C/svg%3E") right bottom no-repeat,
+    linear-gradient(rgba(232,200,128,.6), rgba(232,200,128,.6)) 26px 12px / calc(100% - 52px) 1px no-repeat, linear-gradient(rgba(232,200,128,.6), rgba(232,200,128,.6)) 26px calc(100% - 13px) / calc(100% - 52px) 1px no-repeat,
+    linear-gradient(rgba(232,200,128,.6), rgba(232,200,128,.6)) 12px 26px / 1px calc(100% - 52px) no-repeat, linear-gradient(rgba(232,200,128,.6), rgba(232,200,128,.6)) calc(100% - 13px) 26px / 1px calc(100% - 52px) no-repeat; }
+.th-citadelle .cover { border-radius: 1px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--accentText) 35%, transparent), 0 14px 26px -12px var(--shadow); }
+.th-citadelle .primary { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); letter-spacing: .02em; }
+.th-citadelle .secondary, .th-citadelle .square, .th-citadelle .search { border-radius: 3px; }
+.th-citadelle .grp { border-radius: 4px; box-shadow: 0 0 0 1px var(--line); }
+
+/* Encre: a magazine's black and white, right angles, large serif titles, the pictures' only colour on the covers. */
+.th-encre .h1 { font-weight: 400; font-size: 52px; letter-spacing: -.01em; line-height: 1; }
+.th-encre .sec, .th-encre .coll .name { font-weight: 400; font-size: 30px; letter-spacing: -.005em; }
+.th-encre .hero-line, .th-encre .sheet-title .t { font-weight: 400; letter-spacing: -.005em; }
+.th-encre .hero-line { font-size: 48px; }
+.th-encre .mark span { font-weight: 400; font-size: 22px; }
+.th-encre .side { backdrop-filter: none; border-right: 1px solid var(--ink); }
+.th-encre .side-row, .th-encre .device, .th-encre .search, .th-encre .square, .th-encre .primary, .th-encre .secondary, .th-encre .grp, .th-encre .seg, .th-encre .seg button { border-radius: 0; }
+.th-encre .side-row[aria-current='page'] { background: var(--ink); color: var(--bg); }
+.th-encre .side-row[aria-current='page'] .ico, .th-encre .side-row[aria-current='page'] .count { color: var(--bg); }
+.th-encre .side-row .ico { color: var(--ink); }
+.th-encre .hero { border-radius: 0; box-shadow: none; }
+.th-encre .hero-bg { filter: grayscale(1) contrast(1.1); }
+.th-encre .cover { border-radius: 0; box-shadow: none; }
+.th-encre .cover::after { box-shadow: inset 0 0 0 1px var(--line); }
+.th-encre .toolbar { background: var(--bg); backdrop-filter: none; border-bottom: 1px solid var(--ink); }
+
+/* Reflet: the window takes on the colours of the book being read (--mood, set in App.tsx). */
+.th-reflet .app { background: radial-gradient(110% 70% at 25% -10%, color-mix(in srgb, var(--mood, #8a7d6b) 34%, transparent), transparent 70%),
+  radial-gradient(80% 60% at 100% 100%, color-mix(in srgb, var(--mood2, #4b5563) 22%, transparent), transparent 70%), var(--bg); transition: background 600ms var(--ease); }
+.th-reflet.md-dark .app { background: radial-gradient(110% 70% at 25% -10%, color-mix(in srgb, var(--mood, #8a7d6b) 46%, transparent), transparent 70%),
+  radial-gradient(80% 60% at 100% 100%, color-mix(in srgb, var(--mood2, #4b5563) 30%, transparent), transparent 70%), var(--bg); }
+.th-reflet .toolbar { background: transparent; backdrop-filter: blur(24px) saturate(1.4); }
+.th-reflet .side { border-right-color: transparent; }
+
+/* ——— Theme picker in the settings ——— */
+.theme-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 4px 14px 16px; }
+.theme-card { display: flex; flex-direction: column; align-items: center; gap: 8px; border: 0; padding: 0; background: transparent; }
+.theme-preview { position: relative; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; border: 1px solid; overflow: hidden; display: block;
+  transition: transform 200ms var(--spring), box-shadow 200ms var(--ease); }
+.theme-card:hover .theme-preview { transform: translateY(-2px); }
+.theme-card[aria-checked='true'] .theme-preview { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.tp-side { position: absolute; left: 0; top: 0; bottom: 0; width: 26%; }
+.tp-title { position: absolute; left: 34%; top: 14%; font-size: 22px; line-height: 1; }
+.tp-lines { position: absolute; left: 34%; right: 12%; top: 52%; display: flex; flex-direction: column; gap: 5px; }
+.tp-lines i { display: block; height: 3px; border-radius: 2px; opacity: .8; }
+.tp-lines i + i { width: 70%; }
+.tp-dot { position: absolute; right: 10%; bottom: 12%; width: 12px; height: 12px; border-radius: 50%; }
+.tp-encre, .tp-encre .tp-dot { border-radius: 0; }
+.tp-reflet { background-image: radial-gradient(90% 80% at 20% 0%, rgba(160,120,80,.45), transparent 70%) !important; }
+.theme-name { font-size: 12px; font-weight: 600; }
+.theme-card[aria-checked='true'] .theme-name { color: var(--accentText); }
+.swatch.maison { box-shadow: inset 0 0 0 2px var(--bg); outline: 1px dashed var(--muted); outline-offset: 1px; }
+
+/* ——— Guided start ——— */
+.tour { position: fixed; inset: 0; z-index: 60; }
+.tour-veil { position: absolute; inset: 0; background: rgba(0,0,0,.5); animation: fade 240ms var(--ease) both; }
+.tour-hole { position: absolute; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,.5), 0 0 0 2px var(--accent);
+  transition: left 320ms var(--ease), top 320ms var(--ease), width 320ms var(--ease), height 320ms var(--ease); pointer-events: none; }
+.tour-bubble { position: absolute; display: flex; flex-direction: column; gap: 8px; padding: 20px; border-radius: 16px; background: var(--bg); color: var(--ink);
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.45), 0 0 0 1px var(--line); animation: rise 280ms var(--ease) both; }
+.tour-bubble h2 { margin: 4px 0 0; font: 700 19px/1.2 var(--display); }
+.tour-bubble p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.tour-foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.tour-foot .link { margin-right: auto; color: var(--muted); }
+.tour-dots { display: flex; gap: 5px; margin-right: auto; }
+.tour-dots + .link { margin-left: 0; margin-right: 0; }
+.tour-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--field); }
+.tour-dots i.on { background: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .tour-hole, .tour-bubble, .tour-veil { transition: none; animation: none; } }

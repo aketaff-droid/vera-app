@@ -16,6 +16,7 @@ const Reader = lazy(() => import('./components/Reader').then(m => ({default: m.R
 import {Sheet} from './components/Sheet';
 import {Settings} from './components/Settings';
 import {Onboarding} from './components/Onboarding';
+import {Tour} from './components/Tour';
 
 const ROOT = 'Hors collection';
 
@@ -63,6 +64,8 @@ export function App() {
   const [reading, setReading] = useState<string | null>(null);
   // Choosing books to share: the selection, then the assistant with the chosen books.
   const [selected, setSelected] = useState<Set<string> | null>(null);
+  // The guided start: once after the first start (and after the update that brought it), then from the settings.
+  const [touring, setTouring] = useState(false);
   const [sharing, setSharing] = useState<string[] | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [glow, setGlow] = useState(false);
@@ -100,8 +103,21 @@ export function App() {
   }, [refresh]);
 
   const accent = state?.settings.accent ?? 'orange';
+  const theme = state?.settings.theme ?? 'vera';
   const appearance = state?.settings.appearance ?? 'auto';
-  useEffect(() => {applyTheme(accent, appearance); return onSystemAppearance(() => applyTheme(accent, appearance));}, [accent, appearance]);
+  useEffect(() => {applyTheme(theme, accent, appearance); return onSystemAppearance(() => applyTheme(theme, accent, appearance));}, [theme, accent, appearance]);
+  // Reflet: the window's colours come from the book being read (on the Kobo or in Vera), else the newest one.
+  const mood = useMemo(() => {
+    const books = library?.books ?? [];
+    const reading = books.find(b => b.kobo?.status === 1) ?? books.find(b => b.read !== null && b.read < 1)
+      ?? [...books].sort((a, b) => b.addedAt - a.addedAt)[0];
+    return reading?.tint ?? [];
+  }, [library]);
+  useEffect(() => {
+    const root = document.documentElement.style;
+    if (mood[0]) root.setProperty('--mood', mood[0]); else root.removeProperty('--mood');
+    if (mood[1]) root.setProperty('--mood2', mood[1]); else root.removeProperty('--mood2');
+  }, [mood]);
 
   const go = useCallback((next: View) => {
     setOpen(null); setQuery('');
@@ -199,7 +215,7 @@ export function App() {
     if (next.has(hash)) next.delete(hash); else next.add(hash);
     setSelected(next);
   };
-  const selectButton = <button className={`pill${selected ? ' on' : ''}`} onClick={() => {setSelected(selected ? null : new Set()); setOpen(null);}}>
+  const selectButton = <button data-tour="select" className={`pill${selected ? ' on' : ''}`} onClick={() => {setSelected(selected ? null : new Set()); setOpen(null);}}>
     {selected ? 'Terminer' : 'Sélectionner'}</button>;
   const dir = state.settings.watchDir ?? '';
   const readingBook = reading ? library.books.find(b => b.hash === reading) ?? null : null;
@@ -210,7 +226,7 @@ export function App() {
   let body: ReactNode;
   if (view.kind === 'settings') {
     body = <><Toolbar title="Réglages" appearance={appearance} setAppearance={setAppearance}/>
-      <Settings state={state} library={library} save={s => save(s).catch(e => setToast({text: e.message}))} changeFolder={() => void changeFolder()} journal={() => go({kind: 'journal'})}/></>;
+      <Settings state={state} library={library} save={s => save(s).catch(e => setToast({text: e.message}))} changeFolder={() => void changeFolder()} journal={() => go({kind: 'journal'})} tour={() => {go({kind: 'all'}); setTouring(true);}}/></>;
   } else if (view.kind === 'journal') {
     body = <><Toolbar title="Journal" crumb="Réglages" onCrumb={() => go({kind: 'settings'})} appearance={appearance} setAppearance={setAppearance}/>
       <Journal/></>;
@@ -262,6 +278,8 @@ export function App() {
         share={() => setSharing([...selected])}/>
         : <KoboCapsule state={state} library={library} glow={glow} eject={eject} retry={retry} review={() => setReviewing(true)}/>}
     </main>
+    {(touring || !state.settings.toured) && view.kind === 'all' && !open && !reading && !sharing && !selected &&
+      <Tour close={() => {setTouring(false); if (!state.settings.toured) void save({...state.settings, toured: true});}}/>}
     {open && <Sheet hash={open} onKobo={state.deviceKnown && !marks.waiting.has(open)} replaceEdited={state.settings.replaceEdited}
       close={() => setOpen(null)} saved={undo => setToast({text: 'Fiche enregistrée', undo})} read={() => {setReading(open); setOpen(null);}}
       share={() => {setSharing([open]); setOpen(null);}}/>}

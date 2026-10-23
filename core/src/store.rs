@@ -15,7 +15,9 @@ use std::{
 };
 
 pub const FILE: &str = "vera2.sqlite";
-pub const ACCENTS: [&str; 8] = ["blue", "purple", "pink", "red", "orange", "yellow", "green", "graphite"];
+pub const ACCENTS: [&str; 9] = ["maison", "blue", "purple", "pink", "red", "orange", "yellow", "green", "graphite"];
+/// The looks of the window (docs/DECISIONS.md, section P); the reader keeps its own backgrounds.
+pub const THEMES: [&str; 5] = ["vera", "papier", "citadelle", "encre", "reflet"];
 /// The 1.x catalogue, read once (never written) to keep what it knew of the Kobo.
 pub const LEGACY: &str = "catalogue.sqlite";
 const SCHEMA: i64 = 2;
@@ -31,14 +33,19 @@ pub struct Settings {
     pub watch_dir: Option<String>,
     pub autostart: bool,
     pub kobo_sync: bool,
-    /// The accent colour, as on macOS: blue, purple, pink, red, orange, yellow, green or graphite.
+    /// The accent colour: "maison" (the theme's own) or, as on macOS, blue, purple, pink, red, orange, yellow, green
+    /// or graphite.
     pub accent: String,
+    /// The look of the window: vera, papier, citadelle, encre or reflet.
+    pub theme: String,
     /// "auto", "light" or "dark".
     pub appearance: String,
     /// Replace Vera's copy on the Kobo after a correction. Off until checked on the real liseuse that
     /// a replaced file keeps its reading position (docs/CAHIER-DES-CHARGES-2.0.md, §5).
     pub replace_edited: bool,
     pub onboarded: bool,
+    /// The guided start was shown (or skipped).
+    pub toured: bool,
     /// How books are shown in Vera's reader.
     pub reader: ReaderSettings,
     /// Sharing: the mail account and Discord channels (their secrets are in Windows' credential store, never
@@ -98,9 +105,11 @@ impl Default for Settings {
             autostart: true,
             kobo_sync: true,
             accent: "orange".into(),
+            theme: "vera".into(),
             appearance: "auto".into(),
             replace_edited: false,
             onboarded: false,
+            toured: false,
             reader: ReaderSettings::default(),
             share: ShareSettings::default(),
         }
@@ -271,6 +280,7 @@ impl Store {
     pub fn save_settings(&self, mut settings: Settings) -> Result<Settings> {
         let reader = &settings.reader;
         if !ACCENTS.contains(&settings.accent.as_str())
+            || !THEMES.contains(&settings.theme.as_str())
             || !["auto", "light", "dark"].contains(&settings.appearance.as_str())
             || !(14..=32).contains(&reader.size)
             || !["blanc", "papier", "calme", "nuit"].contains(&reader.theme.as_str())
@@ -1210,6 +1220,11 @@ pub(crate) mod tests {
         // Settings saved before the reader existed are read with its defaults.
         let old: Settings = serde_json::from_str(r#"{"watchDir":null,"accent":"blue"}"#).unwrap();
         assert_eq!(old.reader, ReaderSettings::default());
+        // ... and with the first theme, keeping their accent.
+        assert_eq!((old.theme.as_str(), old.accent.as_str()), ("vera", "blue"));
+        let themed = store.save_settings(Settings { theme: "papier".into(), accent: "maison".into(), ..settings.clone() }).unwrap();
+        assert_eq!((themed.theme.as_str(), themed.accent.as_str()), ("papier", "maison"));
+        assert!(store.save_settings(Settings { theme: "rose".into(), ..settings.clone() }).is_err());
     }
 
     #[test]

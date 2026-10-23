@@ -35,7 +35,7 @@ export function Guide() {
   const steps = stepsFor(app, n);
 
   useEffect(() => {
-    void api.state().then(s => applyTheme(s.settings.accent, s.settings.appearance)).catch(() => {});
+    void api.state().then(s => applyTheme(s.settings.theme, s.settings.accent, s.settings.appearance)).catch(() => {});
     void api.library().then(l => setBooks(hashes.map(h => l.books.find(b => b.hash === h)).filter((b): b is Book => !!b))).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

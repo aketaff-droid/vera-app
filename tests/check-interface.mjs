@@ -1,7 +1,7 @@
 // Interface checks run by GitHub before the build (npm test).
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {accents, readerThemes, surfaces} from '../src/theme.ts';
+import {accents, readerThemes, themes} from '../src/theme.ts';
 import {list, matches, plural, size, sorted, surname, when} from '../src/format.ts';
 
 // Every command the interface calls is registered by the application.
@@ -17,14 +17,18 @@ function luminance(hex) {
   return hex.match(/[a-f\d]{2}/gi).map(v => parseInt(v, 16) / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [.2126, .7152, .0722][i], 0);
 }
 const ratio = (a, b) => {const x = luminance(a), y = luminance(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);};
-for (const [mode, p] of Object.entries(surfaces)) {
-  for (const [fg, bg] of [['ink', 'bg'], ['muted', 'bg'], ['warn', 'bg'], ['ink', 'card'], ['muted', 'card']]) {
-    assert(ratio(p[fg], p[bg]) >= 4.5, `${mode} : ${fg} ${p[fg]} sur ${bg} ${p[bg]} = ${ratio(p[fg], p[bg]).toFixed(2)}`);
-  }
-  for (const [accent, tones] of Object.entries(accents)) {
-    const t = tones[mode];
-    assert(ratio(t.onFill, t.fill) >= 4.5, `${accent} ${mode} : texte ${t.onFill} sur ${t.fill} = ${ratio(t.onFill, t.fill).toFixed(2)}`);
-    assert(ratio(t.text, p.bg) >= 4.5, `${accent} ${mode} : accent ${t.text} sur ${p.bg} = ${ratio(t.text, p.bg).toFixed(2)}`);
+// Every theme, light and dark, with its own accent and each macOS accent.
+for (const [id, theme] of Object.entries(themes)) {
+  for (const [mode, p] of Object.entries(theme.surfaces)) {
+    const ground = p.bg;
+    for (const [fg, bg] of [['ink', 'bg'], ['muted', 'bg'], ['warn', 'bg'], ['ink', 'card'], ['muted', 'card']]) {
+      if (!p[bg].startsWith('#')) continue;
+      assert(ratio(p[fg], p[bg]) >= 4.5, `${id} ${mode} : ${fg} ${p[fg]} sur ${bg} ${p[bg]} = ${ratio(p[fg], p[bg]).toFixed(2)}`);
+    }
+    for (const [accent, t] of [['maison', theme.accent[mode]], ...Object.entries(accents).map(([a, tones]) => [a, tones[mode]])]) {
+      assert(ratio(t.onFill, t.fill) >= 4.5, `${id} ${accent} ${mode} : texte ${t.onFill} sur ${t.fill} = ${ratio(t.onFill, t.fill).toFixed(2)}`);
+      assert(ratio(t.text, ground) >= 4.5, `${id} ${accent} ${mode} : accent ${t.text} sur ${ground} = ${ratio(t.text, ground).toFixed(2)}`);
+    }
   }
 }
 // The reader's backgrounds too.
@@ -61,4 +65,4 @@ assert.deepEqual(sorted(shelf, 'recent').map(b => b.addedAt), [3, 2, 1]);
 // The browser preview never ships: only api.ts may load it, behind import.meta.env.DEV.
 assert(/if \(import\.meta\.env\.DEV\) return mock \?\?= import\('\.\/dev\/mock'\)/.test(api));
 
-console.log(`PASS : ${used.length} commandes reliées, contrastes AA des 8 couleurs d’accent en clair et sombre, français, recherche sans accents, tri, lecture (contrastes, aucun script de livre).`);
+console.log(`PASS : ${used.length} commandes reliées, contrastes AA des 5 thèmes avec leurs 9 couleurs d’accent en clair et sombre, français, recherche sans accents, tri, lecture (contrastes, aucun script de livre).`);

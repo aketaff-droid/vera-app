@@ -3,17 +3,21 @@
 import {invoke as tauriInvoke, convertFileSrc} from '@tauri-apps/api/core';
 import {listen as tauriListen} from '@tauri-apps/api/event';
 
-export type Accent = 'blue' | 'purple' | 'pink' | 'red' | 'orange' | 'yellow' | 'green' | 'graphite';
+export type Accent = 'maison' | 'blue' | 'purple' | 'pink' | 'red' | 'orange' | 'yellow' | 'green' | 'graphite';
 export type Appearance = 'auto' | 'light' | 'dark';
+export type ThemeId = 'vera' | 'papier' | 'citadelle' | 'encre' | 'reflet';
 
 export interface Settings {
   watchDir: string | null;
   autostart: boolean;
   koboSync: boolean;
   accent: Accent;
+  theme: ThemeId;
   appearance: Appearance;
   replaceEdited: boolean;
   onboarded: boolean;
+  /** The guided start was shown (or skipped). */
+  toured: boolean;
   reader: ReaderSettings;
   share: ShareSettings;
 }

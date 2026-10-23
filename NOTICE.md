@@ -7,7 +7,8 @@ Application personnelle pour Windows 11. Aucun service payant, aucun compte.
 - **hayro** (rendu des PDF pour les couvertures), licence MIT ou Apache 2.0. Il incorpore les polices standard de PDFium/Foxit (licence BSD à trois clauses), les CMaps d’Adobe et un profil de couleur CGATS ; leurs textes de licence sont copiés dans l’inventaire avec ceux de hayro.
 - **foliate-js** 1.0.1 (affichage des EPUB dans la lecture), John Factotum : licence MIT. Il embarque zip.js (Gildas Lormeau, licence BSD à trois clauses) et fflate (Arjun Barrett, licence MIT), dont les textes sont dans `licenses/tools/`.
 - **pdf.js** (`pdfjs-dist`, affichage des PDF dans la lecture), Mozilla : licence Apache 2.0. Ses polices standard (Foxit, Liberation) et ses décodeurs (OpenJPEG, JBIG2, qcms) ont leurs licences copiées dans l’inventaire.
-- **Police** Literata (couvertures sans image dans l’interface) : SIL Open Font License 1.1, texte incorporé avec son paquet. L’interface utilise Segoe UI, police de Windows, non distribuée avec Vera.
+- **Polices** Literata (couvertures sans image, thème Papier), Cinzel (thème Citadelle) et Instrument Serif (thème Encre, nom du logo) : SIL Open Font License 1.1, textes incorporés avec leurs paquets. L’interface utilise Segoe UI, police de Windows, non distribuée avec Vera.
+- **Logo** (l’elfe au monocle) : dessiné pour Vera (`src-tauri/icons/vera.svg`).
 - **Open Library** : catalogue bibliographique public interrogé seulement quand l’utilisateur clique « Compléter la fiche ».
 
 Les couvertures de l’aperçu navigateur (`src/dev/covers/`) sont des tableaux du domaine public diffusés par Standard Ebooks (CC0), sauf `le-horla.jpg`, dessinée par Vera. Aucun livre, catalogue ou relevé personnel n’est dans ce dépôt.

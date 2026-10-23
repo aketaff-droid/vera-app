@@ -9,6 +9,7 @@ mod update;
 use background::Shared;
 use std::sync::Arc;
 use tauri::{
+    image::Image,
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
     AppHandle, Manager,
@@ -102,7 +103,8 @@ fn main() {
             let quit = MenuItem::with_id(app, "quit", "Quitter Vera", true, None::<&str>)?;
             let separator = tauri::menu::PredefinedMenuItem::separator(app)?;
             let menu = Menu::with_items(app, &[&status, &eject, &update, &open, &separator, &quit])?;
-            let icon = app.default_window_icon().cloned().ok_or("Icône absente")?.to_owned();
+            // The notification area gets the logo's small optical size (sturdier hairlines, no chain).
+            let icon = Image::from_bytes(include_bytes!("../icons/tray.png"))?.to_owned();
             let tray = TrayIconBuilder::with_id("vera")
                 .tooltip("Vera")
                 .icon(icon.clone())

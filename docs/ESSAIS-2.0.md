@@ -5,7 +5,7 @@ Ce qui est déjà vérifié automatiquement (à chaque fabrication GitHub) : cat
 Ce qui ne peut l'être que chez toi, dans cet ordre :
 
 ## 1. Installation par-dessus la 1.2.1
-- Lancer `Vera_2.5.0_x64-setup.exe` depuis l’Explorateur (il remplace les versions précédentes ; tes réglages et ton catalogue sont gardés).
+- Lancer `Vera_2.6.0_x64-setup.exe` depuis l’Explorateur (il remplace les versions précédentes ; tes réglages et ton catalogue sont gardés).
 - Attendu : Vera s'ouvre directement sur la bibliothèque si la 1.2 surveillait déjà ton dossier (sinon, l'écran « Où sont tes livres ? »).
 - Le catalogue de la 1.2 (`%APPDATA%\fr.vera.personal\catalogue.sqlite`) est seulement lu : revenir à la 1.2.1 reste possible.
 
@@ -65,6 +65,13 @@ C'est la première fois que la version Rust écrit sur ta vraie liseuse (copies 
 - **La 2.5.0 s’installe une dernière fois à la main.** Les suivantes : Vera te prévient (notification, point dans la zone de notification, rappel en bas de la barre latérale) ; Réglages › À propos › « Installer et redémarrer ». Vérifie après le redémarrage que la version a changé et que tes réglages et ta bibliothèque sont là.
 - « Rechercher » dans Réglages › À propos doit répondre « Vera est à jour. » quand il n’y a rien de nouveau.
 
-## 10. Plus tard, et seulement si tu le souhaites
+## 10. Thèmes et logo (2.6)
+- La 2.6.0 doit être proposée par Vera elle-même (notification, rappel en bas de la barre latérale) ; « Installer et redémarrer » dans Réglages › À propos. Après le redémarrage : Réglages › À propos indique 2.6.0, réglages et bibliothèque intacts.
+- Le nouveau logo apparaît dans la barre des tâches, la zone de notification (avec ses points d’état), la fenêtre et le menu Démarrer (Windows peut garder l’ancienne icône en cache un moment).
+- Réglages › Apparence : essayer chaque thème en clair et en sombre ; la pastille en pointillés est la couleur du thème, les autres restent au choix. Ouvrir un livre : la lecture ne change pas.
+- Visite guidée : elle s’ouvre au premier démarrage de la 2.6 ; « Passer », Échap et les flèches fonctionnent ; elle ne revient pas au démarrage suivant ; Réglages › À propos › « Revoir la visite guidée » la relance.
+- Barre latérale : replier et déplier une collection et le groupe « Collections » ; l’état reste après un redémarrage.
+
+## 11. Plus tard, et seulement si tu le souhaites
 - Corriger la fiche d'un livre déjà sur la Kobo, activer « Remplacer sur la Kobo les livres corrigés », rebrancher, et vérifier que la page de lecture de ce livre est conservée. Si elle ne l'est pas, désactiver le réglage.
 - Vérifier si la Kobo affiche le titre corrigé d'un PDF (non garanti : elle peut lire le nom du fichier).

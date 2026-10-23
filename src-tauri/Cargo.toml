@@ -1,6 +1,6 @@
 [package]
 name = "vera"
-version = "2.5.0"
+version = "2.6.0"
 edition = "2021"
 
 [features]
@@ -11,7 +11,7 @@ tauri-build = { version = "=2.7.1", features = [] }
 
 [dependencies]
 vera-core = { path = "../core" }
-tauri = { version = "=2.12.1", features = ["tray-icon", "protocol-asset"] }
+tauri = { version = "=2.12.1", features = ["tray-icon", "protocol-asset", "image-png"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"

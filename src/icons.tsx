@@ -1,3 +1,5 @@
+import logoSmall from './assets/vera.svg';
+import logoLarge from './assets/vera-grand.svg';
 // Line icons drawn for Vera in the spirit of SF Symbols (no icon font, no emoji). Decorative: hidden from screen readers.
 import type {ReactNode} from 'react';
 
@@ -5,12 +7,9 @@ const Svg = ({size = 16, view = '0 0 20 20', stroke = 1.6, children}: {size?: nu
   <svg width={size} height={size} viewBox={view} fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>;
 
 /** Vera's app icon: an open book on the accent colour. */
+/** Vera's logo: the elf drawn in thick and thin strokes. Its small optical size (sturdier hairlines) below 48 px. */
 export const AppIcon = ({size = 26}: {size?: number}) =>
-  <span className="app-icon" style={{width: size, height: size}} aria-hidden="true">
-    <svg width={size * .62} height={size * .62} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/>
-    </svg>
-  </span>;
+  <img className="app-icon" src={size >= 48 ? logoLarge : logoSmall} width={size} height={size} alt="" aria-hidden="true"/>;
 export const Books = () => <Svg><path d="M3.5 3.5h3v13h-3zM8 3.5h3v13H8z"/><path d="M12.6 4.4l2.9-.8 3 12.5-2.9.8z"/></Svg>;
 export const Stack = () => <Svg><rect x="3" y="7" width="14" height="10" rx="2"/><path d="M5 4.5h10M7 2h6"/></Svg>;
 export const Person = () => <Svg><circle cx="10" cy="7" r="3.2"/><path d="M3.8 17c.8-3.2 3.3-5 6.2-5s5.4 1.8 6.2 5"/></Svg>;

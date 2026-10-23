@@ -38,27 +38,52 @@ interface SidebarProps {
   eject: () => void;
 }
 
+/** Folded collections, kept on this computer only (a convenience, not a setting). */
+const FOLDED = 'vera.folded';
+function readFolded(): Set<string> {
+  try {return new Set(JSON.parse(localStorage.getItem(FOLDED) ?? '[]') as string[]);} catch {return new Set();}
+}
+/** The whole « Collections » group, folded under its label. */
+const GROUP = '';
+
 export function Sidebar({state, library, authors, view, go, eject}: SidebarProps) {
+  const [folded, setFolded] = useState(readFolded);
+  const toggle = (name: string) => setFolded(now => {
+    const next = new Set(now);
+    if (next.has(name)) next.delete(name); else next.add(name);
+    try {localStorage.setItem(FOLDED, JSON.stringify([...next]));} catch {/* kept for this session only */}
+    return next;
+  });
   const tops = library.collections.filter(c => c.parent === null);
   const children = (parent: string) => library.collections.filter(c => c.parent === parent);
-  const row = (target: View, label: string, count: number | null, icon: ReactNode, depth = 0) =>
-    <button key={label + depth + ('name' in target ? target.name : target.kind)} className="side-row"
-      style={{paddingLeft: 10 + depth * 14}} aria-current={sameView(view, target) ? 'page' : undefined} onClick={() => go(target)}>
+  const row = (target: View, label: string, count: number | null, icon: ReactNode, indent = 10) =>
+    <button key={label + indent + ('name' in target ? target.name : target.kind)} className="side-row" data-tour={target.kind === 'settings' ? 'settings' : undefined}
+      style={{paddingLeft: indent}} aria-current={sameView(view, target) ? 'page' : undefined} onClick={() => go(target)}>
       <span className="ico">{icon}</span><span className="label">{label}</span>{count !== null && <span className="count">{count}</span>}
     </button>;
-  const tree = (c: Collection, depth: number): ReactNode[] =>
-    [row({kind: 'collection', name: c.name}, c.label, c.total, <FolderSmall/>, depth), ...children(c.name).flatMap(child => tree(child, depth + 1))];
+  // Each level leaves room on the left for its disclosure arrow, so that folders line up whether or not they have one.
+  const tree = (c: Collection, depth: number): ReactNode => {
+    const kids = children(c.name);
+    const open = !folded.has(c.name);
+    return <div key={c.name} className="side-tree">
+      {kids.length > 0 && <button className="twist" style={{left: depth * 14}} aria-expanded={open}
+        aria-label={`${open ? 'Replier' : 'Déplier'} ${c.label}`} onClick={() => toggle(c.name)}><Chevron open={open}/></button>}
+      {row({kind: 'collection', name: c.name}, c.label, c.total, <FolderSmall/>, 24 + depth * 14)}
+      {kids.length > 0 && open && <div className="side-kids">{kids.map(kid => tree(kid, depth + 1))}</div>}
+    </div>;
+  };
+  const groupOpen = !folded.has(GROUP);
   return <nav className="side" aria-label="Bibliothèque">
     <div className="mark"><AppIcon/><span>Vera</span></div>
-    <div className="side-group">
+    <div className="side-group" data-tour="library">
       <span className="side-label">Bibliothèque</span>
       {row({kind: 'all'}, 'Tous les livres', library.books.length, <Books/>)}
       {row({kind: 'collections'}, 'Collections', tops.length, <Stack/>)}
       {row({kind: 'authors'}, 'Auteurs', authors, <Person/>)}
     </div>
-    {tops.length > 0 && <div className="side-group">
-      <span className="side-label">Collections</span>
-      {tops.flatMap(c => tree(c, 0))}
+    {tops.length > 0 && <div className="side-group" data-tour="collections">
+      <button className="side-label fold" aria-expanded={groupOpen} onClick={() => toggle(GROUP)}>Collections<Chevron open={groupOpen}/></button>
+      {groupOpen && tops.map(c => tree(c, 0))}
     </div>}
     <Device state={state} eject={eject}/>
     <div className="side-foot">
@@ -69,6 +94,10 @@ export function Sidebar({state, library, authors, view, go, eject}: SidebarProps
     </div>
   </nav>;
 }
+
+const Chevron = ({open}: {open: boolean}) =>
+  <span className={`chev${open ? '' : ' closed'}`} aria-hidden="true"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor"
+    strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5l3 3 3-3"/></svg></span>;
 
 /** Below this the Kobo is said to be nearly full, as in the notification area (src-tauri/src/background.rs). */
 const LOW_SPACE = 500 * 1024 * 1024;
@@ -94,7 +123,7 @@ function Device({state, eject}: {state: AppState; eject: () => void}) {
   else line = 'Branchée';
   const progress = step?.stage === 'sending' ? (step.index + (step.size ? step.done / step.size : 0)) / Math.max(step.total, 1) : null;
   const canEject = !!device && !k.syncing && !k.ejecting && !k.ejected;
-  return <div className="side-group">
+  return <div className="side-group" data-tour="kobo">
     <span className="side-label">Appareils</span>
     <div className={`device${device && !k.ejected ? ' on' : ''}`}>
       <span className="ico"><Kobo/></span>

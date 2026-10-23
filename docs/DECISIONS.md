@@ -53,3 +53,15 @@ Décisions explicites de l’utilisateur (« ne plus avoir à installer/désinst
 - Les versions sont publiées sur un **dépôt GitHub public distinct**, instantané propre du code (sans données personnelles, sans les maquettes ni les références des skills), le dépôt de travail restant privé (choix « Nouveau dépôt public propre »).
 - **Progression et notes de la Kobo dans Vera**, en lecture seule : à chaque branchement, Vera copie le pourcentage lu, l’état et les surlignages/notes des livres qu’elle a envoyés, sans rien écrire sur la liseuse. Les notes s’exportent en Markdown depuis la fiche. La position du mode lecture de Vera reste distincte (section L).
 - Pas de prise en charge du MOBI (l’utilisateur n’en a aucun).
+
+## P. Thèmes, logo, visite guidée et collections repliables (2.6), 23 octobre 2026
+
+Décisions explicites de l’utilisateur, après les maquettes d’une refonte « cognitive » (non retenue : « pas fan ») :
+- **Thèmes** pour la fenêtre, en plus du style actuel : **Vera** (l’actuel), **Papier**, **Citadelle**, **Encre** et **Reflet** (« Thème c’est très bien »). Ils remplacent la phrase « un seul style » de la section K ; Clair, Sombre et Auto restent.
+- Chaque thème a **sa propre couleur d’accent** (« maison ») et donne accès aux autres couleurs si l’utilisateur le désire.
+- **Le mode lecture n’a pas de thème** : il garde ses fonds (section L).
+- Citadelle est une création originale : aucun nom, élément ni signe venant d’un jeu (le code est public).
+- **Logo** : un elfe érudit au monocle, dessiné en pleins et déliés comme une lettre à empattements, sur fond vert forêt, avec le nom en Instrument Serif. Deux tailles optiques (déliés renforcés sous 48 px, utilisés aussi dans la zone de notification). Sources : `src-tauri/icons/vera.svg` et `vera-petit.svg`.
+- **Visite guidée au démarrage** (« ajoute un tuto de départ guidé ») : des bulles sur la vraie fenêtre (bibliothèque, collections, un livre, partager, Kobo, réglages), montrée une fois — y compris après la mise à jour qui l’apporte — puis rejouable depuis Réglages › À propos. Elle ne fait rien à la place de l’utilisateur.
+- **Collections repliables** dans la barre latérale (chaque collection à sous-collections, et le groupe entier) ; l’état est gardé sur le PC.
+- Publication par la mise à jour depuis Vera (section O), qui sert de premier essai réel de ce cycle ; retour à la 2.5.0 possible en la réinstallant (elle ignore le réglage de thème).

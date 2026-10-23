@@ -1,6 +1,8 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import '@fontsource-variable/literata';
+import '@fontsource-variable/cinzel';
+import '@fontsource/instrument-serif/latin-400.css';
 import './style.css';
 import {App} from './App';
 import {Guide} from './components/Guide';
