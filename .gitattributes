@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.pdf -text
+*.epub -text
+*.png -text
+*.ico -text
+assets/vera.avatar.json -text
+src/vera.avatar.json -text

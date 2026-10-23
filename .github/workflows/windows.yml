@@ -1,0 +1,48 @@
+# Vera's Windows installer, made and tested by GitHub: by hand (Actions › Run workflow) or by pushing a v* tag,
+# which also publishes it under Releases (« publier » does the same from Run workflow). Everything happens in scripts/ci-windows.ps1.
+name: Fabrication Windows
+on:
+  workflow_dispatch:
+    inputs:
+      publier:
+        description: Publier cette version (Vera la proposera en mise à jour)
+        type: boolean
+        default: false
+      notes:
+        description: Ce qu’apporte la version (montré dans Vera)
+        type: string
+        default: ''
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rust 1.99
+        shell: pwsh
+        run: rustup toolchain install 1.99.0 --profile minimal; rustup default 1.99.0
+      - name: Outils, tests et fabrication
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERA_PUBLISH: ${{ inputs.publier }}
+          VERA_NOTES: ${{ inputs.notes }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: ./scripts/ci-windows.ps1
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: vera-windows
+          path: src-tauri/target/release/bundle/nsis/*-setup.exe
+          retention-days: 14

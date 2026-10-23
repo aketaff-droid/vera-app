@@ -1,0 +1,25 @@
+{
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "resources": {
+      "../.release/kepubify.exe": "kepubify.exe",
+      "../.release/notices/": "notices/",
+      "../README.md": "README.md",
+      "../NOTICE.md": "NOTICE.md"
+    },
+    "windows": {
+      "nsis": {
+        "compression": "zlib",
+        "installMode": "currentUser",
+        "languages": [
+          "French"
+        ],
+        "displayLanguageSelector": false
+      },
+      "allowDowngrades": false
+    }
+  }
+}
