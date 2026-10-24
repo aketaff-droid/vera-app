@@ -1,7 +1,7 @@
 // The guided start (docs/DECISIONS.md, section P): a few bubbles over the real window, each lighting one place of
 // Vera, shown once after the first start and on demand from the settings. Nothing is done for the user: it only shows.
 import {useCallback, useEffect, useLayoutEffect, useState} from 'react';
-import {AppIcon} from '../icons';
+import {Wordmark} from '../logo';
 
 interface Step {target?: string; title: string; text: string}
 
@@ -62,7 +62,7 @@ export function Tour({close}: {close: () => void}) {
     {rect ? <div className="tour-hole" style={{left: rect.left - PAD, top: rect.top - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2}}/>
       : <div className="tour-veil"/>}
     <div className="tour-bubble" style={style} key={index}>
-      {!rect && <AppIcon size={56}/>}
+      {!rect && <Wordmark height={40}/>}
       <h2>{step.title}</h2>
       <p>{step.text}</p>
       <div className="tour-foot">

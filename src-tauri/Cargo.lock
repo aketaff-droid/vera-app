@@ -5520,7 +5520,7 @@ dependencies = [
 
 [[package]]
 name = "vera"
-version = "2.6.0"
+version = "2.7.0"
 dependencies = [
  "clipboard-win",
  "keyring",
@@ -5540,7 +5540,7 @@ dependencies = [
 
 [[package]]
 name = "vera-core"
-version = "2.6.0"
+version = "2.7.0"
 dependencies = [
  "base64 0.22.1",
  "fs4",

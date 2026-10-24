@@ -1,8 +1,9 @@
 import {useEffect, useState, type ReactNode} from 'react';
 import {getCurrentWindow} from '@tauri-apps/api/window';
+import {Wordmark} from '../logo';
 import {inTauri, type AppState, type Collection, type Library} from '../api';
 import {size, when} from '../format';
-import {AppIcon, Books, Caption, Eject, FolderSmall, Gear, Kobo, Person, Stack} from '../icons';
+import {Books, Caption, Eject, FolderSmall, Gear, Kobo, Person, Stack} from '../icons';
 
 export type View = {kind: 'all'} | {kind: 'collections'} | {kind: 'collection'; name: string} | {kind: 'authors'} | {kind: 'author'; name: string}
   | {kind: 'settings'} | {kind: 'journal'};
@@ -74,7 +75,7 @@ export function Sidebar({state, library, authors, view, go, eject}: SidebarProps
   };
   const groupOpen = !folded.has(GROUP);
   return <nav className="side" aria-label="Bibliothèque">
-    <div className="mark"><AppIcon/><span>Vera</span></div>
+    <div className="mark"><Wordmark/></div>
     <div className="side-group" data-tour="library">
       <span className="side-label">Bibliothèque</span>
       {row({kind: 'all'}, 'Tous les livres', library.books.length, <Books/>)}

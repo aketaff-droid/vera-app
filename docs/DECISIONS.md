@@ -54,14 +54,16 @@ Décisions explicites de l’utilisateur (« ne plus avoir à installer/désinst
 - **Progression et notes de la Kobo dans Vera**, en lecture seule : à chaque branchement, Vera copie le pourcentage lu, l’état et les surlignages/notes des livres qu’elle a envoyés, sans rien écrire sur la liseuse. Les notes s’exportent en Markdown depuis la fiche. La position du mode lecture de Vera reste distincte (section L).
 - Pas de prise en charge du MOBI (l’utilisateur n’en a aucun).
 
-## P. Thèmes, logo, visite guidée et collections repliables (2.6), 23 octobre 2026
+## P. Thèmes, logo, visite guidée, zoom et surlignage dans la lecture, collections repliables (2.6–2.7), 23 octobre 2026
 
 Décisions explicites de l’utilisateur, après les maquettes d’une refonte « cognitive » (non retenue : « pas fan ») :
 - **Thèmes** pour la fenêtre, en plus du style actuel : **Vera** (l’actuel), **Papier**, **Citadelle**, **Encre** et **Reflet** (« Thème c’est très bien »). Ils remplacent la phrase « un seul style » de la section K ; Clair, Sombre et Auto restent.
 - Chaque thème a **sa propre couleur d’accent** (« maison ») et donne accès aux autres couleurs si l’utilisateur le désire.
 - **Le mode lecture n’a pas de thème** : il garde ses fonds (section L).
 - Citadelle est une création originale : aucun nom, élément ni signe venant d’un jeu (le code est public).
-- **Logo** : un elfe érudit au monocle, dessiné en pleins et déliés comme une lettre à empattements, sur fond vert forêt, avec le nom en Instrument Serif. Deux tailles optiques (déliés renforcés sous 48 px, utilisés aussi dans la zone de notification). Sources : `src-tauri/icons/vera.svg` et `vera-petit.svg`.
+- **Logo** (2.7, remplace l’elfe de la 2.6.0, « rester sur “Vera” avec une typo élégante ») : le nom « Vera. » en Bodoni Moda, avec un point final, vectorisé (`src-tauri/icons/vera-mot.svg`, `src/logo.tsx`) et à l’encre de chaque thème ; l’icône est « V. » crème sur vert forêt, plus grasse sous 48 px et dans la zone de notification (`icone.svg`, `icone-petite.svg`).
 - **Visite guidée au démarrage** (« ajoute un tuto de départ guidé ») : des bulles sur la vraie fenêtre (bibliothèque, collections, un livre, partager, Kobo, réglages), montrée une fois — y compris après la mise à jour qui l’apporte — puis rejouable depuis Réglages › À propos. Elle ne fait rien à la place de l’utilisateur.
+- **Zoom dans la lecture** (2.7, « ajoute dans le mode lecture la possibilité de zoomer ») : − / % / + dans la barre, Ctrl + molette, Ctrl +, Ctrl −, Ctrl 0. Un PDF agrandit sa page (jusqu’à 400 %, déplacée en la faisant glisser) ; un EPUB agrandit son texte (la taille du texte du réglage « Aa »).
+- **Surligner dans la lecture** (2.7, « ajoute aussi la possibilité de surligner ») : revient sur le « pas d’annotations » de la section L. Dans un EPUB, choisir un passage propose quatre couleurs ; toucher un surlignage permet de changer sa couleur, d’ajouter une note ou de le retirer ; un panneau les liste et les exporte en Markdown avec les notes de la Kobo. Gardés dans le catalogue de Vera seulement : jamais dans le fichier du livre, jamais sur la Kobo. Pas encore dans les PDF (pdf.js n’y affiche pas de texte sélectionnable dans Vera).
 - **Collections repliables** dans la barre latérale (chaque collection à sous-collections, et le groupe entier) ; l’état est gardé sur le PC.
 - Publication par la mise à jour depuis Vera (section O), qui sert de premier essai réel de ce cycle ; retour à la 2.5.0 possible en la réinstallant (elle ignore le réglage de thème).

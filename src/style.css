@@ -30,8 +30,9 @@ a { color: inherit; }
 .side { position: relative; z-index: 1; flex: none; width: 240px; padding: 14px 10px 14px; background: var(--side);
   backdrop-filter: blur(40px) saturate(1.8); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 18px; overflow: auto; }
 .mark { display: flex; align-items: center; gap: 10px; padding: 4px 10px 2px; }
-.mark .app-icon { width: 26px; height: 26px; border-radius: 22%; box-shadow: none; }
-.mark span { font: 700 17px var(--display); letter-spacing: -.01em; }
+.wordmark { display: block; width: auto; color: var(--ink); flex: none; }
+.mark .wordmark { margin: 2px 0 0; }
+.tour-bubble .wordmark, .onboarding-mark { align-self: flex-start; margin-bottom: 6px; }
 .side-group { display: flex; flex-direction: column; gap: 1px; }
 .side-label { padding: 0 10px 4px; font-size: 11px; font-weight: 600; color: var(--faint); }
 .side-row { display: flex; align-items: center; gap: 9px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent;
@@ -238,7 +239,6 @@ button:disabled { opacity: .5; cursor: default; }
 .footnote { margin: 2px 12px 0; font-size: 12px; color: var(--muted); }
 
 /* ——— First launch, empty states, alerts ——— */
-.app-icon { display: block; border-radius: 22%; box-shadow: 0 6px 18px -6px var(--shadow); }
 .center { position: relative; flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .step { width: 540px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; animation: rise 420ms var(--ease); }
 .step.wide { width: 640px; }
@@ -343,6 +343,13 @@ button:disabled { opacity: .5; cursor: default; }
 .rhost { position: relative; flex: 1; min-width: 0; }
 .rhost foliate-view { position: absolute; inset: 0; display: block; }
 .rhost.pdf { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+/* A zoomed page scrolls in both directions and is dragged like a picture; margin: auto keeps it centred while it fits. */
+.rhost.pdf.zoomed { display: block; overflow: auto; cursor: grab; padding: 12px 24px; }
+.rhost.pdf.zoomed .pdf-page { margin: auto; }
+.rhost.pdf.zoomed.dragging { cursor: grabbing; user-select: none; }
+.rzoom { display: flex; align-items: center; gap: 0; }
+.rzoom .zl { min-width: 54px; padding: 0 6px; font-variant-numeric: tabular-nums; color: var(--rmuted); }
+.rzoom .rbtn:disabled { opacity: .35; }
 .pdf-page { display: block; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 12px 32px -12px rgba(0,0,0,.3); }
 .pdf-page[data-theme='papier'] { filter: sepia(.12); }
 .pdf-page[data-theme='calme'] { filter: invert(.82) hue-rotate(180deg) sepia(.08); }
@@ -550,14 +557,14 @@ button.chip:not(.on) { background: var(--field); color: var(--ink); font-weight:
 
 /* Papier: cream paper with a faint grain, serif titles. */
 .th-papier .app { background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .25 0 0 0 0 .12 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E"); }
-.th-papier .h1, .th-papier .sec, .th-papier .hero-line, .th-papier .mark span, .th-papier .sheet-title .t, .th-papier .coll .name { font-weight: 600; letter-spacing: -.01em; }
+.th-papier .h1, .th-papier .sec, .th-papier .hero-line, .th-papier .sheet-title .t, .th-papier .coll .name { font-weight: 600; letter-spacing: -.01em; }
 .th-papier .h1 { font-size: 36px; }
 .th-papier .toolbar { background: color-mix(in srgb, var(--bg) 90%, transparent); }
 .th-papier .cover { border-radius: 2px; box-shadow: 0 1px 2px rgba(60,40,15,.18), 0 12px 24px -12px var(--shadow); }
 .th-papier .side { backdrop-filter: none; }
 
 /* Citadelle: stone or vellum, gold rules, engraved capitals, framed pictures. Original: no game's names or marks. */
-.th-citadelle .h1, .th-citadelle .sec, .th-citadelle .hero-line, .th-citadelle .mark span, .th-citadelle .sheet-title .t, .th-citadelle .coll .name {
+.th-citadelle .h1, .th-citadelle .sec, .th-citadelle .hero-line, .th-citadelle .sheet-title .t, .th-citadelle .coll .name {
   font-weight: 600; letter-spacing: .04em; }
 .th-citadelle .h1 { font-size: 32px; }
 .th-citadelle .sec { font-size: 19px; }
@@ -582,7 +589,6 @@ button.chip:not(.on) { background: var(--field); color: var(--ink); font-weight:
 .th-encre .sec, .th-encre .coll .name { font-weight: 400; font-size: 30px; letter-spacing: -.005em; }
 .th-encre .hero-line, .th-encre .sheet-title .t { font-weight: 400; letter-spacing: -.005em; }
 .th-encre .hero-line { font-size: 48px; }
-.th-encre .mark span { font-weight: 400; font-size: 22px; }
 .th-encre .side { backdrop-filter: none; border-right: 1px solid var(--ink); }
 .th-encre .side-row, .th-encre .device, .th-encre .search, .th-encre .square, .th-encre .primary, .th-encre .secondary, .th-encre .grp, .th-encre .seg, .th-encre .seg button { border-radius: 0; }
 .th-encre .side-row[aria-current='page'] { background: var(--ink); color: var(--bg); }
@@ -637,3 +643,26 @@ button.chip:not(.on) { background: var(--field); color: var(--ink); font-weight:
 .tour-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--field); }
 .tour-dots i.on { background: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .tour-hole, .tour-bubble, .tour-veil { transition: none; animation: none; } }
+
+/* ——— Highlights in the reader ——— */
+.rcount { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--rline); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.rpop.marks { right: 210px; width: 360px; max-height: calc(100% - 120px); transform-origin: top right; }
+.rempty { margin: 0; font-size: 13px; color: var(--rmuted); }
+.mark-row { display: flex !important; gap: 10px; align-items: flex-start; }
+.mark-row i { flex: none; width: 4px; align-self: stretch; border-radius: 2px; }
+.mark-row span { display: flex; flex-direction: column; gap: 3px; }
+.mark-row q { quotes: '« ' ' »'; }
+.mark-row small { font-size: 11px; color: var(--rmuted); }
+.mark-row small.mine { color: var(--rink); font-style: italic; }
+.hl-menu { position: absolute; z-index: 4; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 14px; background: var(--rpanel); color: var(--rink);
+  box-shadow: 0 16px 40px -12px rgba(0,0,0,.4), inset 0 0 0 .5px var(--rline); animation: pop 180ms var(--spring) both; }
+.hl-dot { width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); transition: transform 150ms var(--spring); }
+.hl-dot:hover { transform: scale(1.12); }
+.hl-dot[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--rpanel), 0 0 0 4px var(--rink); }
+.hl-sep { width: 1px; height: 22px; background: var(--rline); }
+.hl-act { height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--rink); font-size: 13px; white-space: nowrap; }
+.hl-act:hover { background: var(--rline); }
+.hl-act.strong { font-weight: 600; }
+.hl-note { display: flex; flex-direction: column; gap: 8px; width: 260px; }
+.hl-note textarea { min-height: 80px; resize: vertical; border: 0; border-radius: 9px; padding: 8px 10px; background: var(--rline); color: var(--rink); font: 13px/1.45 var(--ui); outline: none; }
+.hl-note span { display: flex; justify-content: flex-end; gap: 6px; }

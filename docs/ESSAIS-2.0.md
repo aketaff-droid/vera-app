@@ -67,9 +67,11 @@ C'est la première fois que la version Rust écrit sur ta vraie liseuse (copies 
 
 ## 10. Thèmes et logo (2.6)
 - La 2.6.0 doit être proposée par Vera elle-même (notification, rappel en bas de la barre latérale) ; « Installer et redémarrer » dans Réglages › À propos. Après le redémarrage : Réglages › À propos indique 2.6.0, réglages et bibliothèque intacts.
-- Le nouveau logo apparaît dans la barre des tâches, la zone de notification (avec ses points d’état), la fenêtre et le menu Démarrer (Windows peut garder l’ancienne icône en cache un moment).
+- Le logo « Vera. » (2.7) apparaît dans la barre des tâches, la zone de notification (avec ses points d’état), la fenêtre et le menu Démarrer (Windows peut garder l’ancienne icône en cache un moment).
 - Réglages › Apparence : essayer chaque thème en clair et en sombre ; la pastille en pointillés est la couleur du thème, les autres restent au choix. Ouvrir un livre : la lecture ne change pas.
 - Visite guidée : elle s’ouvre au premier démarrage de la 2.6 ; « Passer », Échap et les flèches fonctionnent ; elle ne revient pas au démarrage suivant ; Réglages › À propos › « Revoir la visite guidée » la relance.
+- Lecture (2.7) : sélectionner un passage d’un EPUB, choisir une couleur ; le toucher pour ajouter une note ou le retirer ; tourner la page et revenir, fermer et rouvrir le livre : il est toujours là ; le panneau des surlignages (crayon) y mène et les exporte. Le fichier du livre et la Kobo ne changent pas.
+- dans un PDF, « + » agrandit la page, qu’on fait glisser à la souris ; Ctrl + molette et Ctrl 0 fonctionnent ; dans un EPUB, le zoom agrandit le texte.
 - Barre latérale : replier et déplier une collection et le groupe « Collections » ; l’état reste après un redémarrage.
 
 ## 11. Plus tard, et seulement si tu le souhaites

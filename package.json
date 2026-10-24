@@ -1,7 +1,7 @@
 {
   "name": "vera",
   "private": true,
-  "version": "2.6.0",
+  "version": "2.7.0",
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",

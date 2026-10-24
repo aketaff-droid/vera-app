@@ -235,6 +235,25 @@ pub async fn annotations(shared: State<'_, Arc<Shared>>, hash: String) -> Result
     blocking(move || shared.store.annotations(&hash)).await
 }
 
+/// The passages highlighted in Vera's reader (kept in the catalogue only).
+#[tauri::command]
+pub async fn highlights(shared: State<'_, Arc<Shared>>, hash: String) -> Result<Vec<vera_core::store::Highlight>> {
+    let shared = shared.inner().clone();
+    blocking(move || shared.store.highlights(&hash)).await
+}
+
+#[tauri::command]
+pub async fn save_highlight(shared: State<'_, Arc<Shared>>, hash: String, highlight: vera_core::store::Highlight) -> Result<vera_core::store::Highlight> {
+    let shared = shared.inner().clone();
+    blocking(move || shared.store.save_highlight(&hash, &highlight)).await
+}
+
+#[tauri::command]
+pub async fn delete_highlight(shared: State<'_, Arc<Shared>>, hash: String, id: String) -> Result<()> {
+    let shared = shared.inner().clone();
+    blocking(move || shared.store.delete_highlight(&hash, &id)).await
+}
+
 /// Saves a book's highlights as a Markdown file where the owner chooses (never in the watched folder).
 #[tauri::command]
 pub async fn export_annotations(app: AppHandle, shared: State<'_, Arc<Shared>>, hash: String, title: String, authors: String) -> Result<Option<String>> {

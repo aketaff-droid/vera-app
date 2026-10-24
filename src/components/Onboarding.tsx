@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react';
 import {api, coverSrc, type AppState, type Library, type Settings, type Suggestion} from '../api';
 import {plural} from '../format';
-import {AppIcon, Folder, Kobo} from '../icons';
+import {Folder, Kobo} from '../icons';
+import {Wordmark} from '../logo';
 
 type Step = 'folder' | 'reading' | 'ready';
 
@@ -34,7 +35,7 @@ export function Onboarding({state, library, save}: {state: AppState; library: Li
 
   return <div className="center">
     {step === 'folder' && <div className="step">
-      <AppIcon size={64}/>
+      <span className="onboarding-mark"><Wordmark height={52}/></span>
       <h1 className="h1">Où sont tes livres ?</h1>
       <p className="lead">Vera les lit dans ce dossier et les envoie sur ta Kobo. Elle n’y modifie et n’y supprime jamais rien.</p>
       {suggestion ? <div className="choice">

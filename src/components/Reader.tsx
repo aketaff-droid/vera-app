@@ -1,10 +1,11 @@
-// Vera's reader, in the spirit of Apple Books: the book alone, a quiet bar, « Aa » for size, background and font.
+// Vera's reader, in the spirit of Apple Books: the book alone, a quiet bar, « Aa » for size, background and font, and
+// a zoom (a PDF's page, an EPUB's text; Ctrl + molette, Ctrl +/−/0).
 // EPUBs are laid out by foliate-js, PDFs drawn by pdf.js. The file is only read; the place is kept in Vera's
 // catalogue, never on the Kobo. A book's own scripts never run: the window's Content-Security-Policy
 // (src-tauri/tauri.conf.json) allows no script but Vera's, and the pages of a book inherit it.
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
 import literata from '@fontsource-variable/literata/files/literata-latin-wght-normal.woff2?url';
-import {api, type Book, type ReaderSettings, type ReaderTheme, type Settings} from '../api';
+import {api, type Book, type Highlight, type HighlightColor, type ReaderSettings, type ReaderTheme, type Settings} from '../api';
 import {readerThemes} from '../theme';
 import {TitleBar} from './Shell';
 
@@ -16,11 +17,28 @@ interface Engine {
   goTo: (target: string | number) => void;
   goToFraction: (fraction: number) => void;
   style: (settings: ReaderSettings) => void;
+  /** PDF only: the page's scale over « whole page » (1). */
+  zoom?: (level: number) => void;
+  /** EPUB only: the highlights drawn on the pages. */
+  marks?: (list: Highlight[]) => void;
+  clearSelection?: () => void;
   close: () => void;
 }
 interface Place {fraction: number; chapter: string; position: string}
 
 const percent = (f: number) => `${Math.round(f * 100)} %`;
+/** Highlight colours, as drawn on the page (at the reader's opacity) and in the menus. */
+const COLORS: Record<HighlightColor, {name: string; fill: string}> = {
+  jaune: {name: 'Jaune', fill: '#F2C230'}, vert: {name: 'Vert', fill: '#5DBB63'}, bleu: {name: 'Bleu', fill: '#4A9BE0'}, rose: {name: 'Rose', fill: '#E8659A'},
+};
+/** Text chosen on a page, or a highlight touched, with where to show its menu (window coordinates). */
+export interface Chosen {position: string; text: string; x: number; y: number}
+interface Hooks {chose: (c: Chosen | null) => void; touched: (position: string, x: number, y: number) => void}
+
+/** The zoom steps of a PDF page, 1 being the whole page in the window. */
+const ZOOMS = [1, 1.25, 1.5, 2, 2.5, 3, 4];
+/** An EPUB zooms its text: the reader's text size, from 14 to 32 (19 by default, shown as 100 %). */
+const TEXT = {min: 14, max: 32, base: 19, step: 2};
 
 export function Reader({book, settings, save, close}: {book: Book; settings: Settings; save: (s: Settings) => void; close: () => void}) {
   const host = useRef<HTMLDivElement>(null);
@@ -28,7 +46,12 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
   const [toc, setToc] = useState<Mark[]>([]);
   const [place, setPlace] = useState<Place | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [panel, setPanel] = useState<'aa' | 'toc' | null>(null);
+  const [panel, setPanel] = useState<'aa' | 'toc' | 'marks' | null>(null);
+  const [zoom, setZoom] = useState(1);
+  // Highlights: kept in Vera's catalogue, never in the book's file nor on the Kobo.
+  const [marks, setMarks] = useState<Highlight[]>([]);
+  const [menu, setMenu] = useState<{chosen?: Chosen; mark?: Highlight; x: number; y: number; note?: boolean} | null>(null);
+  const hooks = useRef<Hooks>({chose: () => {}, touched: () => {}});
   const reader = settings.reader;
   const theme = readerThemes[reader.theme] ?? readerThemes.papier;
 
@@ -54,12 +77,16 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
     (async () => {
       const [bytes, saved] = await Promise.all([api.bookFile(book.hash), api.readingPosition(book.hash).catch(() => null)]);
       if (cancelled) return;
-      const open = book.format === 'pdf' ? openPdf : openEpub;
-      const opened = await open(box, bytes, saved?.position ?? null, keep, () => cancelled);
+      const opened = book.format === 'pdf' ? await openPdf(box, bytes, saved?.position ?? null, keep, () => cancelled)
+        : await openEpub(box, bytes, saved?.position ?? null, keep, () => cancelled, hooks.current);
       if (cancelled) {opened.engine.close(); return;}
       engine.current = opened.engine;
       opened.engine.style(reader);
       setToc(opened.toc);
+      if (book.format === 'epub') {
+        const list = await api.highlights(book.hash).catch(() => []);
+        if (!cancelled) {setMarks(list); opened.engine.marks?.(list);}
+      }
     })().catch(e => {if (!cancelled) setError(message(e));});
     return () => {cancelled = true; engine.current?.close(); engine.current = null; box.replaceChildren();};
     // The book is opened once; the settings are applied by the effect below.
@@ -67,11 +94,60 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
   }, [book.hash, book.format, keep]);
 
   useEffect(() => {engine.current?.style(reader);}, [reader]);
+  useEffect(() => {engine.current?.zoom?.(zoom);}, [zoom]);
+
+  // Choosing text opens the colours; touching a highlight opens its menu (colour, note, removal).
+  hooks.current.chose = c => setMenu(c ? {chosen: c, x: c.x, y: c.y} : null);
+  hooks.current.touched = (position, x, y) => {
+    const mark = marks.find(m => m.position === position);
+    if (mark) setMenu({mark, x, y});
+  };
+  const store = async (next: Highlight[]) => {setMarks(next); engine.current?.marks?.(next);};
+  const paint = async (color: HighlightColor) => {
+    if (menu?.chosen) {
+      const h: Highlight = {id: crypto.randomUUID(), position: menu.chosen.position, text: menu.chosen.text.slice(0, 20000), color, note: '', fraction: place?.fraction ?? 0, created: 0};
+      const saved = await api.saveHighlight(book.hash, h).catch(() => null);
+      engine.current?.clearSelection?.();
+      if (saved) {await store([...marks, saved].sort((a, b) => a.fraction - b.fraction)); setMenu({mark: saved, x: menu.x, y: menu.y});}
+    } else if (menu?.mark) {
+      const saved = await api.saveHighlight(book.hash, {...menu.mark, color}).catch(() => null);
+      if (saved) {await store(marks.map(m => m.id === saved.id ? saved : m)); setMenu({...menu, mark: saved});}
+    }
+  };
+  const annotate = async (note: string) => {
+    if (!menu?.mark) return;
+    const saved = await api.saveHighlight(book.hash, {...menu.mark, note}).catch(() => null);
+    if (saved) {await store(marks.map(m => m.id === saved.id ? saved : m)); setMenu(null);}
+  };
+  const unmark = async (mark: Highlight) => {
+    await api.deleteHighlight(book.hash, mark.id).catch(() => {});
+    await store(marks.filter(m => m.id !== mark.id));
+    setMenu(null);
+  };
+  const [exported, setExported] = useState<string | null>(null);
+
+  const pdf = book.format === 'pdf';
+  const set = useCallback((change: Partial<ReaderSettings>) => save({...settings, reader: {...reader, ...change}}), [save, settings, reader]);
+  // One zoom for both kinds of book: the page of a PDF, the text of an EPUB.
+  const zoomBy = useCallback((direction: 1 | -1 | 0) => {
+    if (pdf) {
+      setZoom(z => direction === 0 ? 1 : ZOOMS[Math.min(ZOOMS.length - 1, Math.max(0, ZOOMS.indexOf(z) + direction))] ?? 1);
+    } else {
+      const size = direction === 0 ? TEXT.base : Math.min(TEXT.max, Math.max(TEXT.min, reader.size + direction * TEXT.step));
+      if (size !== reader.size) set({size});
+    }
+  }, [pdf, reader.size, set]);
+  const zoomLabel = pdf ? `${Math.round(zoom * 100)} %` : `${Math.round(reader.size / TEXT.base * 100)} %`;
+  const canIn = pdf ? zoom < ZOOMS[ZOOMS.length - 1]! : reader.size < TEXT.max;
+  const canOut = pdf ? zoom > 1 : reader.size > TEXT.min;
 
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement && e.target.type !== 'range') return;
-      if (e.key === 'Escape') {e.preventDefault(); if (panel) setPanel(null); else leave(); return;}
+      if (e.key === 'Escape') {e.preventDefault(); if (menu) {setMenu(null); engine.current?.clearSelection?.();} else if (panel) setPanel(null); else leave(); return;}
+      if (e.ctrlKey && ['+', '=', 'Add'].includes(e.key)) {e.preventDefault(); zoomBy(1); return;}
+      if (e.ctrlKey && ['-', '_', 'Subtract'].includes(e.key)) {e.preventDefault(); zoomBy(-1); return;}
+      if (e.ctrlKey && e.key === '0') {e.preventDefault(); zoomBy(0); return;}
       if (['ArrowRight', 'PageDown', ' '].includes(e.key)) {e.preventDefault(); engine.current?.next();}
       if (['ArrowLeft', 'PageUp'].includes(e.key)) {e.preventDefault(); engine.current?.prev();}
     };
@@ -80,9 +156,23 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
     window.addEventListener('keydown', handle);
     window.addEventListener('vera-reader-key', relayed);
     return () => {window.removeEventListener('keydown', handle); window.removeEventListener('vera-reader-key', relayed);};
-  }, [panel, leave]);
+  }, [panel, leave, zoomBy, menu]);
 
-  const set = (change: Partial<ReaderSettings>) => save({...settings, reader: {...reader, ...change}});
+  // Ctrl + molette zooms, as everywhere in Windows (the wheel alone still scrolls a zoomed page).
+  useEffect(() => {
+    const box = host.current;
+    if (!box) return;
+    let last = 0;
+    const wheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      if (e.timeStamp - last < 120) return;
+      last = e.timeStamp;
+      zoomBy(e.deltaY < 0 ? 1 : -1);
+    };
+    box.addEventListener('wheel', wheel, {passive: false});
+    return () => box.removeEventListener('wheel', wheel);
+  }, [zoomBy]);
   // The pages of an EPUB take the reader's colour scheme: a page whose scheme differs from its frame's would get an
   // opaque background of its own.
   const vars = {'--rbg': theme.bg, '--rink': theme.ink, '--rmuted': theme.muted, '--rline': theme.line, '--rpanel': theme.panel,
@@ -93,6 +183,13 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
       <button className="rbtn" onClick={leave}><Chevron/>Bibliothèque</button>
       {toc.length > 0 && <button className="rbtn" aria-label="Sommaire" aria-expanded={panel === 'toc'} onClick={() => setPanel(panel === 'toc' ? null : 'toc')}><ListIcon/></button>}
       <span className="rtitle" data-tauri-drag-region>{book.title}{book.authors ? ` · ${book.authors}` : ''}</span>
+      {!pdf && <button className="rbtn" aria-label="Surlignages" aria-expanded={panel === 'marks'} onClick={() => setPanel(panel === 'marks' ? null : 'marks')}>
+        <Marker/>{marks.length > 0 && <span className="rcount">{marks.length}</span>}</button>}
+      <span className="rzoom" role="group" aria-label="Zoom">
+        <button className="rbtn" aria-label={pdf ? 'Dézoomer' : 'Texte plus petit'} title="Ctrl −" disabled={!canOut} onClick={() => zoomBy(-1)}><Minus/></button>
+        <button className="rbtn zl" aria-label="Taille normale" title="Ctrl 0" onClick={() => zoomBy(0)}>{zoomLabel}</button>
+        <button className="rbtn" aria-label={pdf ? 'Zoomer' : 'Texte plus grand'} title="Ctrl +" disabled={!canIn} onClick={() => zoomBy(1)}><Plus/></button>
+      </span>
       <button className="rbtn aa-button" aria-label="Apparence de la lecture" aria-expanded={panel === 'aa'} onClick={() => setPanel(panel === 'aa' ? null : 'aa')}>Aa</button>
     </TitleBar>
 
@@ -122,6 +219,27 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
         onClick={() => {engine.current?.goTo(m.target); setPanel(null);}}>{m.label}</button>)}</div>
     </Popover>}
 
+    {panel === 'marks' && <Popover className="marks" label="Surlignages" close={() => setPanel(null)}>
+      <span className="lab">Surlignages</span>
+      {marks.length === 0 ? <p className="rempty">Sélectionne un passage du livre pour le surligner.</p>
+        : <div className="toc-list">{marks.map(m => <button key={m.id} className="mark-row" onClick={() => {engine.current?.goTo(m.position); setPanel(null);}}>
+          <i style={{background: COLORS[m.color].fill}} aria-hidden="true"/><span><q>{m.text.length > 140 ? m.text.slice(0, 140) + '…' : m.text}</q>
+          {m.note && <small className="mine">{m.note}</small>}<small>{Math.round(m.fraction * 100)} %</small></span></button>)}</div>}
+      {marks.length > 0 && <button className="seg" onClick={() => void api.exportAnnotations(book.hash, book.title, book.authors).then(p => setExported(p ? `Enregistré : ${p}` : null)).catch(e => setExported((e as Error).message))}>Exporter les surlignages…</button>}
+      {exported && <p className="rempty" role="status">{exported}</p>}
+    </Popover>}
+
+    {menu && <div className="hl-menu" role="dialog" aria-label={menu.mark ? 'Surlignage' : 'Surligner'}
+      style={{left: Math.min(Math.max(12, menu.x - 130), window.innerWidth - 272), top: Math.max(52, menu.y - (menu.note ? 150 : 58))}}>
+      {menu.note && menu.mark ? <NoteField initial={menu.mark.note} save={note => void annotate(note)} cancel={() => setMenu({...menu, note: false})}/> : <>
+        {(Object.keys(COLORS) as HighlightColor[]).map(c => <button key={c} className="hl-dot" aria-label={`Surligner en ${COLORS[c].name.toLowerCase()}`} aria-pressed={menu.mark?.color === c}
+          style={{background: COLORS[c].fill}} onClick={() => void paint(c)}/>)}
+        {menu.mark && <><span className="hl-sep"/>
+          <button className="hl-act" onClick={() => setMenu({...menu, note: true})}>{menu.mark.note ? 'Note' : 'Ajouter une note'}</button>
+          <button className="hl-act" aria-label="Retirer le surlignage" onClick={() => void unmark(menu.mark!)}>Retirer</button></>}
+      </>}
+    </div>}
+
     <div className="rpage">
       <button className="turn left" aria-label="Page précédente" onClick={() => engine.current?.prev()}><Chevron/></button>
       <div ref={host} className={`rhost ${book.format}`} hidden={!!error}/>
@@ -136,6 +254,15 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
         onChange={e => engine.current?.goToFraction(Number(e.target.value))} style={{'--p': `${(place?.fraction ?? 0) * 100}%`} as React.CSSProperties}/>
       <span className="pc">{place ? percent(place.fraction) : ''}</span>
     </div>
+  </div>;
+}
+
+function NoteField({initial, save, cancel}: {initial: string; save: (note: string) => void; cancel: () => void}) {
+  const [text, setText] = useState(initial);
+  return <div className="hl-note">
+    <textarea autoFocus value={text} maxLength={20000} onChange={e => setText(e.target.value)} placeholder="Ta note sur ce passage" aria-label="Note"
+      onKeyDown={e => {e.stopPropagation(); if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) save(text); if (e.key === 'Escape') cancel();}}/>
+    <span><button className="hl-act" onClick={cancel}>Annuler</button><button className="hl-act strong" onClick={() => save(text)}>Enregistrer</button></span>
   </div>;
 }
 
@@ -162,8 +289,9 @@ const message = (e: unknown) => {
 
 type Keep = (place: Place) => void;
 
-async function openEpub(box: HTMLElement, bytes: ArrayBuffer, saved: string | null, keep: Keep, cancelled: () => boolean): Promise<{engine: Engine; toc: Mark[]}> {
+async function openEpub(box: HTMLElement, bytes: ArrayBuffer, saved: string | null, keep: Keep, cancelled: () => boolean, hooks: Hooks): Promise<{engine: Engine; toc: Mark[]}> {
   await import('foliate-js/view.js');
+  const {Overlayer} = await import('foliate-js/overlayer.js');
   if (cancelled()) throw new Error('Fermé.');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const view = document.createElement('foliate-view') as any;
@@ -183,9 +311,35 @@ async function openEpub(box: HTMLElement, bytes: ArrayBuffer, saved: string | nu
     const {fraction, tocItem, cfi} = e.detail;
     if (cfi) keep({fraction: Math.min(1, Math.max(0, fraction ?? 0)), chapter: tocItem?.label?.trim() ?? '', position: cfi});
   });
-  // Keys pressed while a page has the focus, and links: an external link never opens from a book.
+  // Where something in a page is, in the window: the page is a frame of its own.
+  const onWindow = (doc: Document, rect: DOMRect) => {
+    const frame = (doc.defaultView?.frameElement as HTMLElement | null)?.getBoundingClientRect();
+    return {x: (frame?.left ?? 0) + rect.left + rect.width / 2, y: (frame?.top ?? 0) + rect.top};
+  };
+  // Keys pressed while a page has the focus, text chosen on it, and links: an external link never opens from a book.
   view.addEventListener('load', (e: CustomEvent) => {
-    e.detail.doc.addEventListener('keydown', (k: KeyboardEvent) => window.dispatchEvent(new CustomEvent('vera-reader-key', {detail: k})));
+    const {doc, index} = e.detail as {doc: Document; index: number};
+    doc.addEventListener('keydown', (k: KeyboardEvent) => window.dispatchEvent(new CustomEvent('vera-reader-key', {detail: k})));
+    doc.addEventListener('pointerup', () => setTimeout(() => {
+      const selection = doc.getSelection();
+      const text = selection?.toString().trim() ?? '';
+      if (!selection || selection.isCollapsed || !text) {hooks.chose(null); return;}
+      const range = selection.getRangeAt(0);
+      hooks.chose({position: view.getCFI(index, range), text, ...onWindow(doc, range.getBoundingClientRect())});
+    }, 10));
+  });
+  // Highlights: drawn by foliate-js on each page as it is laid out; a touch on one opens its menu.
+  let current: Highlight[] = [];
+  view.addEventListener('draw-annotation', (e: CustomEvent) => {
+    const {draw, annotation} = e.detail;
+    draw(Overlayer.highlight, {color: COLORS[annotation.color as HighlightColor]?.fill ?? COLORS.jaune.fill});
+  });
+  // A page's overlay is attached just after this event: its highlights are added once it is there.
+  view.addEventListener('create-overlay', () => setTimeout(() => {for (const h of current) void view.addAnnotation({value: h.position, color: h.color});}));
+  view.addEventListener('show-annotation', (e: CustomEvent) => {
+    const {value, range} = e.detail as {value: string; range: Range};
+    const doc = range.startContainer.ownerDocument;
+    if (doc) {const at = onWindow(doc, range.getBoundingClientRect()); hooks.touched(value, at.x, at.y);}
   });
   view.addEventListener('external-link', (e: Event) => e.preventDefault());
 
@@ -205,6 +359,12 @@ async function openEpub(box: HTMLElement, bytes: ArrayBuffer, saved: string | nu
       goTo: target => void view.goTo(target),
       goToFraction: f => void view.goToFraction(f),
       style: settings => renderer.setStyles?.(epubCss(settings, font)),
+      marks: list => {
+        for (const h of current) if (!list.some(n => n.position === h.position && n.color === h.color)) void view.deleteAnnotation({value: h.position});
+        for (const h of list) if (!current.some(o => o.position === h.position && o.color === h.color)) void view.addAnnotation({value: h.position, color: h.color});
+        current = list;
+      },
+      clearSelection: () => {for (const {doc} of view.renderer.getContents?.() ?? []) doc?.getSelection?.()?.removeAllRanges();},
       close: () => {resize.disconnect(); view.close?.(); view.remove();},
     },
   };
@@ -246,6 +406,7 @@ async function openPdf(box: HTMLElement, bytes: ArrayBuffer, saved: string | nul
   box.append(canvas);
   let page = Math.min(total, Math.max(1, Number(/^page:(\d+)$/.exec(saved ?? '')?.[1] ?? 1)));
   let drawing: {cancel: () => void} | null = null;
+  let zoom = 1;
 
   const outline = await doc.getOutline().catch(() => null);
   const flat = (items: {title: string; dest: unknown; items?: unknown[]}[] | null, depth = 0): Mark[] =>
@@ -272,20 +433,33 @@ async function openPdf(box: HTMLElement, bytes: ArrayBuffer, saved: string | nul
     const p = await doc.getPage(page);
     const natural = p.getViewport({scale: 1});
     const room = {w: box.clientWidth - 48, h: box.clientHeight - 24};
-    const scale = Math.max(0.1, Math.min(room.w / natural.width, room.h / natural.height));
+    const scale = Math.max(0.1, Math.min(room.w / natural.width, room.h / natural.height)) * zoom;
+    // Keep the middle of what is seen in the middle when the scale changes.
+    const middle = {x: (box.scrollLeft + box.clientWidth / 2) / Math.max(1, box.scrollWidth), y: (box.scrollTop + box.clientHeight / 2) / Math.max(1, box.scrollHeight)};
     const ratio = window.devicePixelRatio || 1;
     const viewport = p.getViewport({scale: scale * ratio});
     canvas.width = Math.floor(viewport.width);
     canvas.height = Math.floor(viewport.height);
     canvas.style.width = `${Math.floor(viewport.width / ratio)}px`;
     canvas.style.height = `${Math.floor(viewport.height / ratio)}px`;
+    box.classList.toggle('zoomed', zoom > 1);
+    if (zoom > 1) {box.scrollLeft = middle.x * box.scrollWidth - box.clientWidth / 2; box.scrollTop = middle.y * box.scrollHeight - box.clientHeight / 2;}
     const task = p.render({canvas, viewport});
     drawing = task;
     await task.promise.catch(() => {});
     const chapter = [...starts].reverse().find(s => s.page <= page)?.label ?? `Page ${page} sur ${total}`;
     keep({fraction: total > 1 ? (page - 1) / (total - 1) : 1, chapter, position: `page:${page}`});
   }
-  const go = (n: number) => {const next = Math.min(total, Math.max(1, n)); if (next !== page) {page = next; void draw();}};
+  const go = (n: number) => {const next = Math.min(total, Math.max(1, n)); if (next !== page) {page = next; box.scrollTop = 0; void draw();}};
+  // A zoomed page is moved by dragging it, as a picture.
+  let drag: {x: number; y: number; left: number; top: number} | null = null;
+  const down = (e: PointerEvent) => {if (zoom > 1 && e.button === 0) {drag = {x: e.clientX, y: e.clientY, left: box.scrollLeft, top: box.scrollTop}; box.setPointerCapture(e.pointerId); box.classList.add('dragging');}};
+  const move = (e: PointerEvent) => {if (drag) {box.scrollLeft = drag.left - (e.clientX - drag.x); box.scrollTop = drag.top - (e.clientY - drag.y);}};
+  const up = () => {drag = null; box.classList.remove('dragging');};
+  box.addEventListener('pointerdown', down);
+  box.addEventListener('pointermove', move);
+  box.addEventListener('pointerup', up);
+  box.addEventListener('pointercancel', up);
   const resize = new ResizeObserver(() => void draw());
   resize.observe(box);
   await draw();
@@ -299,7 +473,11 @@ async function openPdf(box: HTMLElement, bytes: ArrayBuffer, saved: string | nul
       goToFraction: f => go(1 + Math.round(f * (total - 1))),
       // A PDF keeps its own page; the background around it, and a softer page at night, follow the reader.
       style: settings => {canvas.dataset.theme = settings.theme;},
-      close: () => {resize.disconnect(); drawing?.cancel(); void loading.destroy(); canvas.remove();},
+      zoom: level => {if (level !== zoom) {zoom = level; void draw();}},
+      close: () => {
+        resize.disconnect(); drawing?.cancel(); void loading.destroy(); canvas.remove(); box.classList.remove('zoomed');
+        box.removeEventListener('pointerdown', down); box.removeEventListener('pointermove', move); box.removeEventListener('pointerup', up); box.removeEventListener('pointercancel', up);
+      },
     },
   };
 }
@@ -309,5 +487,11 @@ async function openPdf(box: HTMLElement, bytes: ArrayBuffer, saved: string | nul
 const Chevron = ({flip = false}: {flip?: boolean}) =>
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
     style={flip ? {transform: 'scaleX(-1)'} : undefined}><path d="M10 3L5 8l5 5"/></svg>;
+const Minus = () =>
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M3.5 8h9"/></svg>;
+const Plus = () =>
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9"/></svg>;
+const Marker = () =>
+  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12.5 3.5l4 4-7.5 7.5H5v-4z"/><path d="M3 17.5h14"/></svg>;
 const ListIcon = () =>
   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><path d="M7 5h10M7 10h10M7 15h10M3.5 5h.01M3.5 10h.01M3.5 15h.01"/></svg>;

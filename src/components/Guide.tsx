@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import {api, coverSrc, type Book} from '../api';
 import {applyTheme} from '../theme';
+import {Wordmark} from '../logo';
 import {plural} from '../format';
 
 type App = 'whatsapp' | 'discord' | 'mail';
@@ -44,9 +45,7 @@ export function Guide() {
   const finish = () => void api.shareGuideClose();
   return <div className="guide-window">
     <div className="guide-head" data-tauri-drag-region>
-      <span className="app-icon" style={{width: 26, height: 26}} aria-hidden="true">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>
-      </span>
+      <Wordmark height={18}/>
       <span data-tauri-drag-region><b>Partager avec {names[app]}</b><small>{plural(n, 'livre', 'livres')} · {params.get('size') ?? ''}</small></span>
       <button className="caption close" aria-label="Fermer le guide" onClick={finish}>✕</button>
     </div>

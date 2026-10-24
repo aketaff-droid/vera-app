@@ -168,6 +168,25 @@ pub struct Annotation {
     pub created: String,
 }
 
+/// A passage highlighted in Vera's reader (docs/DECISIONS.md, section P). Kept in the catalogue only: never in the
+/// book's file, never on the Kobo.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Highlight {
+    pub id: String,
+    /// Where in the book: an EPUB CFI range.
+    pub position: String,
+    pub text: String,
+    /// jaune, vert, bleu or rose.
+    pub color: String,
+    pub note: String,
+    /// Where in the book, 0 to 1, to sort and to show.
+    pub fraction: f64,
+    #[serde(default)]
+    pub created: i64,
+}
+pub const HIGHLIGHT_COLORS: [&str; 4] = ["jaune", "vert", "bleu", "rose"];
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Collection {
@@ -239,6 +258,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS annotations(device TEXT NOT NULL, id TEXT NOT NULL, hash TEXT NOT NULL, text TEXT NOT NULL, note TEXT NOT NULL,
                 progress REAL NOT NULL, created TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY(device, id));
             CREATE INDEX IF NOT EXISTS annotations_by_book ON annotations(hash);
+            CREATE TABLE IF NOT EXISTS highlights(hash TEXT NOT NULL, id TEXT NOT NULL, position TEXT NOT NULL, text TEXT NOT NULL,
+                color TEXT NOT NULL, note TEXT NOT NULL, fraction REAL NOT NULL, created INTEGER NOT NULL, PRIMARY KEY(hash, id));
             COMMIT;",
         )
         .map_err(|e| e.to_string())?;
@@ -341,6 +362,7 @@ impl Store {
     /// The annotations as a Markdown page: the book, then each highlight as a quote with its note.
     pub fn annotations_markdown(&self, hash: &str, title: &str, authors: &str) -> Result<String> {
         let notes = self.annotations(hash)?;
+        let marks = self.highlights(hash)?;
         let mut out = format!("# {title}\n\n");
         if !authors.is_empty() {
             out.push_str(&format!("{authors}\n\n"));
@@ -355,6 +377,18 @@ impl Store {
             }
             if !n.note.trim().is_empty() {
                 out.push_str(&format!("\n**Note :** {}\n", n.note.trim()));
+            }
+        }
+        if !marks.is_empty() {
+            out.push_str(&format!("\n## Surlignés dans Vera\n\n{} passage{}.\n", marks.len(), if marks.len() > 1 { "s" } else { "" }));
+            for m in marks {
+                out.push_str(&format!("\n---\n\n*{} % · {}*\n\n", (m.fraction * 100.0).round() as i64, m.color));
+                for line in m.text.lines() {
+                    out.push_str(&format!("> {line}\n"));
+                }
+                if !m.note.is_empty() {
+                    out.push_str(&format!("\n**Note :** {}\n", m.note));
+                }
             }
         }
         Ok(out)
@@ -697,6 +731,48 @@ impl Store {
 
     /// Keeps where the reader is in a book. Only Vera's catalogue is written; the Kobo's reading state is never
     /// touched.
+    /// A book's highlights, in reading order.
+    pub fn highlights(&self, hash: &str) -> Result<Vec<Highlight>> {
+        let db = self.db()?;
+        let mut q = db
+            .prepare("SELECT id, position, text, color, note, fraction, created FROM highlights WHERE hash=?1 ORDER BY fraction, created")
+            .map_err(|e| e.to_string())?;
+        let rows = q
+            .query_map([hash], |r| {
+                Ok(Highlight { id: r.get(0)?, position: r.get(1)?, text: r.get(2)?, color: r.get(3)?, note: r.get(4)?, fraction: r.get(5)?, created: r.get(6)? })
+            })
+            .map_err(|e| e.to_string())?;
+        rows.collect::<std::result::Result<_, _>>().map_err(|e| e.to_string())
+    }
+
+    /// Adds a highlight, or changes its colour or note.
+    pub fn save_highlight(&self, hash: &str, h: &Highlight) -> Result<Highlight> {
+        let clean = |s: &str| !s.contains('\0');
+        if h.id.is_empty() || h.id.len() > 64 || !h.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+            || h.position.is_empty() || h.position.len() > 4096 || !clean(&h.position)
+            || h.text.trim().is_empty() || h.text.len() > 20_000 || !clean(&h.text)
+            || h.note.len() > 20_000 || !clean(&h.note)
+            || !HIGHLIGHT_COLORS.contains(&h.color.as_str()) || !(0.0..=1.0).contains(&h.fraction)
+        {
+            return Err("Surlignage invalide.".into());
+        }
+        if !self.has_book(hash)? {
+            return Err("Livre introuvable.".into());
+        }
+        let created = if h.created > 0 { h.created } else { now() };
+        self.db()?
+            .execute(
+                "INSERT INTO highlights VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) ON CONFLICT(hash, id) DO UPDATE SET color=excluded.color, note=excluded.note",
+                params![hash, h.id, h.position, h.text.trim(), h.color, h.note.trim(), h.fraction, created],
+            )
+            .map_err(|e| e.to_string())?;
+        Ok(Highlight { created, text: h.text.trim().into(), note: h.note.trim().into(), ..h.clone() })
+    }
+
+    pub fn delete_highlight(&self, hash: &str, id: &str) -> Result<()> {
+        self.db()?.execute("DELETE FROM highlights WHERE hash=?1 AND id=?2", params![hash, id]).map(|_| ()).map_err(|e| e.to_string())
+    }
+
     pub fn save_reading(&self, hash: &str, position: &str, fraction: f64) -> Result<()> {
         if position.is_empty() || position.len() > 4096 || position.contains('\0') || !(0.0..=1.0).contains(&fraction) {
             return Err("Position de lecture invalide.".into());
@@ -1198,6 +1274,27 @@ pub(crate) mod tests {
         assert!(store.save_reading(&hash, "x", 1.5).is_err());
         assert!(store.save_reading(&hash, "", 0.1).is_err());
         assert!(store.save_reading("inconnu", "x", 0.1).is_err());
+
+        // Highlights: kept in the catalogue, in reading order; colour and note can change; the file stays as it was.
+        let mark = |id: &str, fraction: f64| Highlight { id: id.into(), position: format!("epubcfi(/6/4!/4/2,/1:{id},/1:9)"), text: " Un passage ".into(),
+            color: "jaune".into(), note: String::new(), fraction, created: 0 };
+        store.save_highlight(&hash, &mark("b2", 0.6)).unwrap();
+        let first = store.save_highlight(&hash, &mark("a1", 0.2)).unwrap();
+        assert_eq!(first.text, "Un passage");
+        store.save_highlight(&hash, &Highlight { color: "bleu".into(), note: "À relire".into(), ..first.clone() }).unwrap();
+        let all = store.highlights(&hash).unwrap();
+        assert_eq!(all.iter().map(|h| h.id.as_str()).collect::<Vec<_>>(), ["a1", "b2"]);
+        assert_eq!((all[0].color.as_str(), all[0].note.as_str(), all[0].created), ("bleu", "À relire", first.created));
+        for bad in [Highlight { color: "rouge".into(), ..mark("c", 0.1) }, Highlight { text: "  ".into(), ..mark("d", 0.1) },
+            Highlight { id: "../x".into(), ..mark("e", 0.1) }, Highlight { fraction: 2.0, ..mark("f", 0.1) }] {
+            assert!(store.save_highlight(&hash, &bad).is_err());
+        }
+        assert!(store.save_highlight("inconnu", &mark("g", 0.1)).is_err());
+        let md = store.annotations_markdown(&hash, "Titre", "Auteur").unwrap();
+        assert!(md.contains("## Surlignés dans Vera") && md.contains("> Un passage") && md.contains("**Note :** À relire"));
+        store.delete_highlight(&hash, "b2").unwrap();
+        assert_eq!(store.highlights(&hash).unwrap().len(), 1);
+        assert_eq!(crate::util::hash_file(&file).unwrap(), hash, "the file is never touched");
 
         // A file changed behind Vera's back is not shown as the book the catalogue knows.
         fs::write(&file, b"autre chose").unwrap();

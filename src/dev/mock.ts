@@ -2,7 +2,7 @@
 // application. Scenarios by URL: ?s=onboarding | drive | full | broken | empty | low (Kobo nearly full),
 // and ?accent=blue&mode=dark, ?theme=papier.
 // window.vera.plug() simulates a Kobo being plugged in.
-import type {AppState, Book, Detail, KoboState, Library, Metadata, Reading, Report, Settings, Step} from '../api';
+import type {AppState, Book, Detail, Highlight, KoboState, Library, Metadata, Reading, Report, Settings, Step} from '../api';
 // Sample files for the reader: the test fixtures (a fictitious corpus, no real book).
 import sampleEpub from '../../tests/fixtures/representative.epub?url';
 import samplePdf from '../../tests/fixtures/sample.pdf?url';
@@ -12,6 +12,7 @@ const cover = (name: string) => covers[`./covers/${name}.jpg`] ?? null;
 // Cover colours as vera-core computes them (cover.rs).
 const tints: Record<string, string[]> = {"around-the-world-in-eighty-days": ["#676b49", "#1d2218"], "dracula": ["#4a5253", "#292720"], "frankenstein": ["#a65d3e", "#280e1b"], "germinal": ["#8e6c4b", "#3e2e22"], "les-miserables": ["#7c5539", "#42342a"], "madame-bovary": ["#9c877b", "#5a5654"], "the-count-of-monte-cristo": ["#86201e", "#1c1c17"], "the-three-musketeers": ["#62411c", "#1a150b"], "the-time-machine": ["#897c65", "#171416"], "the-war-of-the-worlds": ["#c9994e", "#473723"], "le-horla": ["#1c2b4f", "#1b2a4e"]};
 const params = new URLSearchParams(location.search);
+const highlights = new Map<string, Highlight[]>();
 const scenario = params.get('s') ?? '';
 
 const MB = 1024 * 1024;
@@ -145,6 +146,14 @@ export const mock = {
         emit('kobo', {...kobo});
         return gone.length;
       }
+      case 'highlights': return [...(highlights.get(args?.hash as string) ?? [])];
+      case 'save_highlight': {
+        const list = highlights.get(args?.hash as string) ?? [];
+        const h = {...(args?.highlight as Highlight), created: (args?.highlight as Highlight).created || Date.now() / 1000};
+        highlights.set(args?.hash as string, [...list.filter(x => x.id !== h.id), h].sort((a, b) => a.fraction - b.fraction));
+        return h;
+      }
+      case 'delete_highlight': highlights.set(args?.hash as string, (highlights.get(args?.hash as string) ?? []).filter(x => x.id !== args?.id)); return;
       case 'annotations': return [
         {text: 'Il y a des hommes qui observent une loi d’honneur, comme on observe une étoile.', note: '', progress: 0.12, created: '2026-10-20T21:04:00Z'},
         {text: 'On ne doit jamais dire d’un homme qu’il n’a plus d’espoir.', note: 'À relire avec Paul', progress: 0.41, created: '2026-10-21T22:10:00Z'},
