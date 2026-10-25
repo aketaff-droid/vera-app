@@ -828,7 +828,7 @@ mod tests {
         assert_eq!(hash_of(&catalogue), untouched, "the catalogue is only read");
         sync(&s.store, &s.kobo, &plain_epub(), &|_| {}).unwrap();
         let book = s.store.books().unwrap().into_iter().find(|b| b.hash == a).unwrap();
-        assert_eq!(book.kobo, Some(crate::store::KoboReading { percent: 34, status: 1 }));
+        assert_eq!(book.kobo, Some(crate::store::KoboReading { percent: 34, status: 1, last_read: Some("2026-10-22T20:00:00Z".into()) }));
         assert_eq!(book.notes, 2, "the hidden one is left out");
         let notes = s.store.annotations(&a).unwrap();
         assert_eq!(notes[0].note, "Ma note", "in reading order");

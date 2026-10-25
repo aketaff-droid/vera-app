@@ -8,6 +8,7 @@ import literata from '@fontsource-variable/literata/files/literata-latin-wght-no
 import {api, type Book, type Highlight, type HighlightColor, type ReaderSettings, type ReaderTheme, type Settings} from '../api';
 import {readerThemes} from '../theme';
 import {TitleBar} from './Shell';
+import {enabled as artful} from '../dust/stage';
 
 interface Mark {label: string; target: string | number; depth: number}
 /** What the two engines offer the reader. */
@@ -48,6 +49,9 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<'aa' | 'toc' | 'marks' | null>(null);
   const [zoom, setZoom] = useState(1);
+  // The page comes into focus as the dust of the cover settles into it.
+  const [focusIn, setFocusIn] = useState(artful);
+  useEffect(() => {const t = setTimeout(() => setFocusIn(false), 1300); return () => clearTimeout(t);}, []);
   // Highlights: kept in Vera's catalogue, never in the book's file nor on the Kobo.
   const [marks, setMarks] = useState<Highlight[]>([]);
   const [menu, setMenu] = useState<{chosen?: Chosen; mark?: Highlight; x: number; y: number; note?: boolean} | null>(null);
@@ -178,7 +182,7 @@ export function Reader({book, settings, save, close}: {book: Book; settings: Set
   const vars = {'--rbg': theme.bg, '--rink': theme.ink, '--rmuted': theme.muted, '--rline': theme.line, '--rpanel': theme.panel,
     colorScheme: theme.dark ? 'dark' : 'light'} as React.CSSProperties;
 
-  return <div className={`reader${theme.dark ? ' dark' : ''}`} style={vars} role="region" aria-label={`Lecture de ${book.title}`}>
+  return <div className={`reader${theme.dark ? ' dark' : ''}${focusIn ? ' focus-in' : ''}`} style={vars} role="region" aria-label={`Lecture de ${book.title}`}>
     <TitleBar>
       <button className="rbtn" onClick={leave}><Chevron/>Bibliothèque</button>
       {toc.length > 0 && <button className="rbtn" aria-label="Sommaire" aria-expanded={panel === 'toc'} onClick={() => setPanel(panel === 'toc' ? null : 'toc')}><ListIcon/></button>}
@@ -330,9 +334,20 @@ async function openEpub(box: HTMLElement, bytes: ArrayBuffer, saved: string | nu
   });
   // Highlights: drawn by foliate-js on each page as it is laid out; a touch on one opens its menu.
   let current: Highlight[] = [];
+  // A new highlight is laid down like ink along its lines, once (docs/DECISIONS.md, section Q).
+  const fresh = new Set<string>();
+  let primed = false;
   view.addEventListener('draw-annotation', (e: CustomEvent) => {
     const {draw, annotation} = e.detail;
-    draw(Overlayer.highlight, {color: COLORS[annotation.color as HighlightColor]?.fill ?? COLORS.jaune.fill});
+    const ink = fresh.delete(annotation.value);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    draw((rects: any, options: any) => {
+      const g: SVGGElement = Overlayer.highlight(rects, options);
+      if (ink) [...g.children].forEach((rect, i) => Object.assign((rect as SVGElement).style, {transformBox: 'fill-box', transformOrigin: 'left center'}) && (rect as SVGElement).animate(
+        [{transform: 'scaleX(0)', opacity: .35}, {transform: 'scaleX(1)', opacity: 1}],
+        {duration: 420, delay: i * 140, easing: 'cubic-bezier(.22,.8,.3,1)', fill: 'backwards'}));
+      return g;
+    }, {color: COLORS[annotation.color as HighlightColor]?.fill ?? COLORS.jaune.fill});
   });
   // A page's overlay is attached just after this event: its highlights are added once it is there.
   view.addEventListener('create-overlay', () => setTimeout(() => {for (const h of current) void view.addAnnotation({value: h.position, color: h.color});}));
@@ -361,8 +376,12 @@ async function openEpub(box: HTMLElement, bytes: ArrayBuffer, saved: string | nu
       style: settings => renderer.setStyles?.(epubCss(settings, font)),
       marks: list => {
         for (const h of current) if (!list.some(n => n.position === h.position && n.color === h.color)) void view.deleteAnnotation({value: h.position});
-        for (const h of list) if (!current.some(o => o.position === h.position && o.color === h.color)) void view.addAnnotation({value: h.position, color: h.color});
+        for (const h of list) if (!current.some(o => o.position === h.position && o.color === h.color)) {
+          if (primed && artful() && !current.some(o => o.position === h.position)) fresh.add(h.position);
+          void view.addAnnotation({value: h.position, color: h.color});
+        }
         current = list;
+        primed = true;
       },
       clearSelection: () => {for (const {doc} of view.renderer.getContents?.() ?? []) doc?.getSelection?.()?.removeAllRanges();},
       close: () => {resize.disconnect(); view.close?.(); view.remove();},

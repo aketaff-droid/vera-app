@@ -74,6 +74,15 @@ C'est la première fois que la version Rust écrit sur ta vraie liseuse (copies 
 - dans un PDF, « + » agrandit la page, qu’on fait glisser à la souris ; Ctrl + molette et Ctrl 0 fonctionnent ; dans un EPUB, le zoom agrandit le texte.
 - Barre latérale : replier et déplier une collection et le groupe « Collections » ; l’état reste après un redémarrage.
 
-## 11. Plus tard, et seulement si tu le souhaites
+## 11. La poussière de lecture (2.8)
+- Au premier lancement du jour : les couvertures se rassemblent en « Vera. » puis retombent à leur place ; aux lancements suivants du jour, une version courte. Cliquer pendant l’animation ne doit rien bloquer.
+- Brancher la Kobo avec des livres en attente : une poussière part de chaque livre vers la Kobo de la barre latérale pendant l’envoi. Débrancher en plein envoi (ou éjecter) : la poussière en vol revient.
+- Ouvrir un livre depuis sa fiche (« Lire ») ; surligner un passage : l’encre se pose ligne par ligne.
+- Un livre fini sur la Kobo : au branchement suivant, une étoile monte vers « Ciel de lecture » ; ouvrir le Ciel, survoler une étoile (titre, mois), cliquer (fiche).
+- Laisser Vera 4 minutes sur la bibliothèque sans toucher à rien : la rêverie, avec tes passages surlignés ; bouger la souris la réveille.
+- Réglages › Apparence › « Animations artistiques » coupé : plus aucune poussière, la bibliothèque s’affiche tout de suite. Remettre.
+- Noter si l’ouverture revient bien quand la fenêtre réapparaît après 10 minutes (sortie de la zone de notification) : ce point n’a pas pu être vérifié hors Windows.
+
+## 12. Plus tard, et seulement si tu le souhaites
 - Corriger la fiche d'un livre déjà sur la Kobo, activer « Remplacer sur la Kobo les livres corrigés », rebrancher, et vérifier que la page de lecture de ce livre est conservée. Si elle ne l'est pas, désactiver le réglage.
 - Vérifier si la Kobo affiche le titre corrigé d'un PDF (non garanti : elle peut lire le nom du fichier).

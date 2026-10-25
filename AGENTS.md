@@ -27,6 +27,7 @@ La référence est `docs/CAHIER-DES-CHARGES-2.0.md`, puis `docs/DECISIONS.md` po
 
 ## Interface
 - Cinq thèmes (Vera, Papier, Citadelle, Encre, Reflet), chacun avec sa couleur d’accent « maison » et les autres au choix ; apparence Auto, Clair ou Sombre ; le mode lecture n’a pas de thème (DECISIONS.md, section P). Tout thème passe les contrastes de `tests/check-interface.mjs` ; Citadelle reste une création originale, sans rien emprunter à un jeu.
+- La poussière de lecture (DECISIONS.md, section Q) : `src/dust/` et `src/components/DustLayer.tsx`, d’après le skill `dust-motion`. Elle ne bloque jamais un geste, suit les vrais événements (un envoi interrompu se voit), se coupe par « Animations artistiques » et quand Windows demande moins d’animations, et n’écrit rien nulle part.
 - Référence d’expérience : Apple Books. Conventions Windows 11 pour la fenêtre, les notifications et la zone de notification.
 
 ## Discipline

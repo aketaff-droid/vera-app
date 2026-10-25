@@ -235,6 +235,21 @@ pub async fn annotations(shared: State<'_, Arc<Shared>>, hash: String) -> Result
     blocking(move || shared.store.annotations(&hash)).await
 }
 
+/// Passages for « Vera rêve » (the owner's highlights and Kobo notes).
+#[tauri::command]
+pub async fn passages(shared: State<'_, Arc<Shared>>) -> Result<Vec<vera_core::store::Passage>> {
+    let shared = shared.inner().clone();
+    blocking(move || shared.store.passages(30)).await
+}
+
+/// A book's thumbnail, for the window's dust animations (read as bytes: pixels of a picture from another origin could
+/// not be read by the page).
+#[tauri::command]
+pub async fn cover_thumb(shared: State<'_, Arc<Shared>>, hash: String) -> Result<tauri::ipc::Response> {
+    let shared = shared.inner().clone();
+    blocking(move || shared.store.thumb_bytes(&hash)).await.map(tauri::ipc::Response::new)
+}
+
 /// The passages highlighted in Vera's reader (kept in the catalogue only).
 #[tauri::command]
 pub async fn highlights(shared: State<'_, Arc<Shared>>, hash: String) -> Result<Vec<vera_core::store::Highlight>> {

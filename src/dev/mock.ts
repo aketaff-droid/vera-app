@@ -35,7 +35,7 @@ const twins = [['h4'.padEnd(64, '0'), 'h11'.padEnd(64, '0')]];
 let books: Book[] = scenario === 'empty' ? [] : raw.map(([title, authors, collection, file, mo, fresh, format = 'epub', made = false], i) => ({
   hash: `h${i}`.padEnd(64, '0'), title, authors, format, size: Math.round(mo * MB), path: `G:\\Mon Drive\\Livres\\${collection ? `${collection.replaceAll(' › ', '\\')}\\` : ''}${title}.${format}`,
   collection, cover: cover(file), thumb: cover(file), tint: tints[file] ?? [], madeCover: made, read: i === 0 ? 0.34 : null,
-  kobo: i === 2 ? {percent: 62, status: 1} : i === 1 ? {percent: 100, status: 2} : null, notes: i === 2 ? 3 : 0, twin: twins[0]!.includes(`h${i}`.padEnd(64, '0')), addedAt: fresh ? 1_792_600_000 + i : 1_790_000_000 + i, problem: scenario === 'broken' && i === 1 ? 'L’archive s’arrête avant la fin.' : null, edited: false,
+  kobo: i === 2 ? {percent: 62, status: 1, lastRead: '2026-10-24T21:00:00Z'} : [1, 3, 4, 5, 6, 8, 10].includes(i) ? {percent: 100, status: 2, lastRead: `2026-${String(1 + (i * 7) % 10).padStart(2, '0')}-1${i % 9}T20:00:00Z`} : null, notes: i === 2 ? 3 : 0, twin: twins[0]!.includes(`h${i}`.padEnd(64, '0')), addedAt: fresh ? 1_792_600_000 + i : 1_790_000_000 + i, problem: scenario === 'broken' && i === 1 ? 'L’archive s’arrête avant la fin.' : null, edited: false,
 }));
 const fresh = new Set(raw.flatMap((r, i) => r[5] ? [`h${i}`.padEnd(64, '0')] : []));
 
@@ -49,7 +49,7 @@ function collections(): Library['collections'] {
 }
 
 const settings: Settings = {watchDir: scenario === 'onboarding' ? null : 'G:\\Mon Drive\\Livres', autostart: true, koboSync: true,
-  accent: (params.get('accent') as Settings['accent']) ?? (params.get('theme') ? 'maison' : 'orange'), theme: (params.get('theme') as Settings['theme']) ?? 'vera', appearance: (params.get('mode') as Settings['appearance']) ?? 'light', replaceEdited: false, onboarded: scenario !== 'onboarding', toured: !params.get('tour'),
+  accent: (params.get('accent') as Settings['accent']) ?? (params.get('theme') ? 'maison' : 'orange'), theme: (params.get('theme') as Settings['theme']) ?? 'vera', appearance: (params.get('mode') as Settings['appearance']) ?? 'light', replaceEdited: false, onboarded: scenario !== 'onboarding', toured: !params.get('tour'), art: params.get('art') !== '0',
   reader: {size: 19, theme: (params.get('reader') as Settings['reader']['theme']) ?? 'papier', font: 'serif'},
   // ?share=linked: an address and a Discord channel already linked.
   share: params.get('share') === 'linked'
@@ -128,6 +128,16 @@ export const mock = {
         twins: twins.filter(g => !dismissed.has(g.join()))} satisfies Library;
       case 'dismiss_twins': dismissed.add((args.hashes as string[]).join()); emit('library'); return;
       case 'journal': return journal;
+      case 'passages': return [
+        {text: 'Toute la sagesse humaine sera dans ces deux mots : attendre et espérer.', title: 'Le Comte de Monte-Cristo', authors: 'Alexandre Dumas'},
+        {text: 'Quelle journée admirable !', title: 'Le Horla', authors: 'Guy de Maupassant'},
+        {text: 'Il dort. Quoique le sort fût pour lui bien étrange, il vivait.', title: 'Les Misérables', authors: 'Victor Hugo'},
+      ];
+      case 'cover_thumb': {
+        const b = books.find(x => x.hash === args.hash);
+        if (!b?.thumb && !b?.cover) throw new Error('Pas de couverture.');
+        return (await fetch((b.thumb ?? b.cover)!)).arrayBuffer();
+      }
       case 'book_file': {
         const b = books.find(x => x.hash === args.hash);
         return (await fetch(b?.format === 'pdf' ? samplePdf : sampleEpub)).arrayBuffer();

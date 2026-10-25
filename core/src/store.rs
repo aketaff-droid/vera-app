@@ -46,6 +46,8 @@ pub struct Settings {
     pub onboarded: bool,
     /// The guided start was shown (or skipped).
     pub toured: bool,
+    /// The dust animations (docs/DECISIONS.md, section Q); off: the window does without them.
+    pub art: bool,
     /// How books are shown in Vera's reader.
     pub reader: ReaderSettings,
     /// Sharing: the mail account and Discord channels (their secrets are in Windows' credential store, never
@@ -110,6 +112,7 @@ impl Default for Settings {
             replace_edited: false,
             onboarded: false,
             toured: false,
+            art: true,
             reader: ReaderSettings::default(),
             share: ShareSettings::default(),
         }
@@ -155,6 +158,8 @@ pub struct KoboReading {
     pub percent: u8,
     /// 0 not started, 1 reading, 2 finished (the Kobo's ReadStatus).
     pub status: u8,
+    /// When it was last read on the Kobo, as the liseuse wrote it (ISO 8601), if it says.
+    pub last_read: Option<String>,
 }
 
 /// A highlight or a note made on the Kobo.
@@ -184,6 +189,14 @@ pub struct Highlight {
     pub fraction: f64,
     #[serde(default)]
     pub created: i64,
+}
+/// A passage for « Vera rêve ».
+#[derive(Clone, Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Passage {
+    pub text: String,
+    pub title: String,
+    pub authors: String,
 }
 pub const HIGHLIGHT_COLORS: [&str; 4] = ["jaune", "vert", "bleu", "rose"];
 
@@ -532,7 +545,8 @@ impl Store {
                 (SELECT group_concat(path, char(31)) FROM files f WHERE f.hash=b.hash), b.thumb, b.tint, b.made_cover, r.fraction,
                 (SELECT k.percent FROM kobo_reading k WHERE k.hash=b.hash ORDER BY k.last_read DESC LIMIT 1),
                 (SELECT k.status FROM kobo_reading k WHERE k.hash=b.hash ORDER BY k.last_read DESC LIMIT 1),
-                (SELECT count(*) FROM annotations a WHERE a.hash=b.hash)
+                (SELECT count(*) FROM annotations a WHERE a.hash=b.hash),
+                (SELECT k.last_read FROM kobo_reading k WHERE k.hash=b.hash ORDER BY k.last_read DESC LIMIT 1)
              FROM books b LEFT JOIN edits e ON e.hash=b.hash LEFT JOIN reading r ON r.hash=b.hash {filter} ORDER BY b.added_at DESC, b.hash"
         );
         let mut stmt = db.prepare(&sql).map_err(|e| e.to_string())?;
@@ -560,7 +574,7 @@ impl Store {
                 twin: false,
                 read: r.get(12)?,
                 kobo: match (r.get::<_, Option<i64>>(13)?, r.get::<_, Option<i64>>(14)?) {
-                    (Some(percent), Some(status)) => Some(KoboReading { percent: percent.clamp(0, 100) as u8, status: status.clamp(0, 2) as u8 }),
+                    (Some(percent), Some(status)) => Some(KoboReading { percent: percent.clamp(0, 100) as u8, status: status.clamp(0, 2) as u8, last_read: r.get(16)? }),
                     _ => None,
                 },
                 notes: r.get::<_, i64>(15)? as usize,
@@ -717,6 +731,47 @@ impl Store {
             return Err("Le fichier a changé depuis sa lecture ; Vera le relit, réessaie dans un instant.".into());
         }
         Ok(bytes)
+    }
+
+    /// Passages for « Vera rêve »: the owner's highlights in Vera and notes copied from the Kobo, short enough to be
+    /// read in the dust (at most 220 characters), shuffled, at most `limit`.
+    pub fn passages(&self, limit: usize) -> Result<Vec<Passage>> {
+        let db = self.db()?;
+        let mut q = db
+            .prepare(
+                "SELECT text, hash FROM (SELECT text, hash FROM highlights WHERE length(text) BETWEEN 8 AND 220
+                 UNION ALL SELECT text, hash FROM annotations WHERE length(text) BETWEEN 8 AND 220) ORDER BY random() LIMIT ?1",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows: Vec<(String, String)> =
+            q.query_map([limit as i64], |r| Ok((r.get(0)?, r.get(1)?))).map_err(|e| e.to_string())?.collect::<std::result::Result<_, _>>().map_err(|e| e.to_string())?;
+        let books = self.books()?;
+        Ok(rows
+            .into_iter()
+            .filter_map(|(text, hash)| {
+                let book = books.iter().find(|b| b.hash == hash)?;
+                Some(Passage { text: text.split_whitespace().collect::<Vec<_>>().join(" "), title: book.title.clone(), authors: book.authors.clone() })
+            })
+            .collect())
+    }
+
+    /// A book's thumbnail (or cover), for the window's dust animations: only a picture kept in Vera's own covers
+    /// folder, never a file from elsewhere.
+    pub fn thumb_bytes(&self, hash: &str) -> Result<Vec<u8>> {
+        let (thumb, cover): (Option<String>, Option<String>) = self
+            .db()?
+            .query_row("SELECT thumb, cover FROM books WHERE hash=?1", [hash], |r| Ok((r.get(0)?, r.get(1)?)))
+            .optional()
+            .map_err(|e| e.to_string())?
+            .ok_or("Livre introuvable.")?;
+        let covers = self.root.join("covers").canonicalize().map_err(|e| e.to_string())?;
+        for path in [thumb, cover].into_iter().flatten() {
+            let Ok(path) = Path::new(&path).canonicalize() else { continue };
+            if path.starts_with(&covers) && path.metadata().map(|m| m.len() < 4 * 1024 * 1024).unwrap_or(false) {
+                return fs::read(&path).map_err(|e| e.to_string());
+            }
+        }
+        Err("Pas de couverture.".into())
     }
 
     /// Where the reader left a book, if it was opened in Vera.
@@ -1210,6 +1265,9 @@ pub(crate) mod tests {
         let book = &store.books().unwrap()[0];
         assert!(book.thumb.as_ref().is_some_and(|t| Path::new(t).is_file()));
         assert_eq!(book.tint.len(), 2);
+        // The window's dust reads the thumbnail, only from Vera's covers folder.
+        assert_eq!(store.thumb_bytes(&hash).unwrap(), fs::read(book.thumb.as_ref().unwrap()).unwrap());
+        assert!(store.thumb_bytes("inconnu").is_err());
         let png = fs::read(store.books().unwrap()[0].cover.clone().unwrap()).unwrap();
         assert!(!store.set_made_cover(&hash, &png).unwrap(), "a real cover is kept");
 
@@ -1292,6 +1350,10 @@ pub(crate) mod tests {
         assert!(store.save_highlight("inconnu", &mark("g", 0.1)).is_err());
         let md = store.annotations_markdown(&hash, "Titre", "Auteur").unwrap();
         assert!(md.contains("## Surlignés dans Vera") && md.contains("> Un passage") && md.contains("**Note :** À relire"));
+        // « Vera rêve » shows highlights short enough to be read, with their book.
+        let passages = store.passages(10).unwrap();
+        assert_eq!(passages.len(), 2);
+        assert!(passages.iter().all(|p| p.text == "Un passage" && !p.title.is_empty()));
         store.delete_highlight(&hash, "b2").unwrap();
         assert_eq!(store.highlights(&hash).unwrap().len(), 1);
         assert_eq!(crate::util::hash_file(&file).unwrap(), hash, "the file is never touched");
@@ -1319,6 +1381,7 @@ pub(crate) mod tests {
         assert_eq!(old.reader, ReaderSettings::default());
         // ... and with the first theme, keeping their accent.
         assert_eq!((old.theme.as_str(), old.accent.as_str()), ("vera", "blue"));
+        assert!(old.art, "the dust animations are on for settings saved before them");
         let themed = store.save_settings(Settings { theme: "papier".into(), accent: "maison".into(), ..settings.clone() }).unwrap();
         assert_eq!((themed.theme.as_str(), themed.accent.as_str()), ("papier", "maison"));
         assert!(store.save_settings(Settings { theme: "rose".into(), ..settings.clone() }).is_err());

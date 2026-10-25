@@ -3,10 +3,10 @@ import {getCurrentWindow} from '@tauri-apps/api/window';
 import {Wordmark} from '../logo';
 import {inTauri, type AppState, type Collection, type Library} from '../api';
 import {size, when} from '../format';
-import {Books, Caption, Eject, FolderSmall, Gear, Kobo, Person, Stack} from '../icons';
+import {Books, Caption, Eject, FolderSmall, Gear, Kobo, Person, Sky, Stack} from '../icons';
 
 export type View = {kind: 'all'} | {kind: 'collections'} | {kind: 'collection'; name: string} | {kind: 'authors'} | {kind: 'author'; name: string}
-  | {kind: 'settings'} | {kind: 'journal'};
+  | {kind: 'settings'} | {kind: 'journal'} | {kind: 'sky'};
 export const sameView = (a: View, b: View) => a.kind === b.kind && (!('name' in a) || ('name' in b && a.name === b.name));
 
 /** Vera draws its own caption buttons; the strip around them drags the window (a double click maximises). The
@@ -59,6 +59,7 @@ export function Sidebar({state, library, authors, view, go, eject}: SidebarProps
   const children = (parent: string) => library.collections.filter(c => c.parent === parent);
   const row = (target: View, label: string, count: number | null, icon: ReactNode, indent = 10) =>
     <button key={label + indent + ('name' in target ? target.name : target.kind)} className="side-row" data-tour={target.kind === 'settings' ? 'settings' : undefined}
+      data-sky={target.kind === 'sky' ? '' : undefined}
       style={{paddingLeft: indent}} aria-current={sameView(view, target) ? 'page' : undefined} onClick={() => go(target)}>
       <span className="ico">{icon}</span><span className="label">{label}</span>{count !== null && <span className="count">{count}</span>}
     </button>;
@@ -81,6 +82,7 @@ export function Sidebar({state, library, authors, view, go, eject}: SidebarProps
       {row({kind: 'all'}, 'Tous les livres', library.books.length, <Books/>)}
       {row({kind: 'collections'}, 'Collections', tops.length, <Stack/>)}
       {row({kind: 'authors'}, 'Auteurs', authors, <Person/>)}
+      {row({kind: 'sky'}, 'Ciel de lecture', null, <Sky/>)}
     </div>
     {tops.length > 0 && <div className="side-group" data-tour="collections">
       <button className="side-label fold" aria-expanded={groupOpen} onClick={() => toggle(GROUP)}>Collections<Chevron open={groupOpen}/></button>

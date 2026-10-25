@@ -15,7 +15,7 @@ function Segmented<T extends string>({label, value, options, onChange}: {label: 
 
 export function Settings({state, library, save, changeFolder, journal, tour}: {state: AppState; library: Library; save: (s: S) => Promise<void>; changeFolder: () => void; journal: () => void; tour: () => void}) {
   const s = state.settings;
-  const [version, setVersion] = useState('2.7.0');
+  const [version, setVersion] = useState('2.8.0');
   useEffect(() => {if (inTauri) void getVersion().then(setVersion);}, []);
   const folderState = state.folder.error ? 'Introuvable : Google Drive est-il lancé ?'
     : `Surveillé · ${plural(library.books.length, 'livre', 'livres')} · ${plural(library.collections.filter(c => !c.parent).length, 'collection', 'collections')}`;
@@ -85,6 +85,9 @@ export function Settings({state, library, save, changeFolder, journal, tour}: {s
         <div className="line"><span className="two"><span>Apparence</span>
           <small>{s.appearance === 'auto' ? `Suit Windows : actuellement ${effective('auto') === 'dark' ? 'sombre' : 'clair'}` : 'Ne suit plus Windows'}</small></span>
           <Segmented<Appearance> label="Apparence" value={s.appearance} options={[['auto', 'Auto'], ['light', 'Clair'], ['dark', 'Sombre']]} onChange={appearance => void save({...s, appearance})}/></div>
+        <div className="line"><span className="two"><span>Animations artistiques</span>
+          <small>La poussière de lecture : l’ouverture, l’envoi vers la Kobo, les livres finis, la rêverie. Coupées aussi quand Windows demande moins d’animations.</small></span>
+          <Switch on={s.art} label="Animations artistiques" toggle={() => void save({...s, art: !s.art})}/></div>
       </div>
     </section>
 

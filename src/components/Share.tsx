@@ -4,6 +4,7 @@
 import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {api, coverSrc, type Book, type Prepared, type Settings, type SharedFile, type Targets} from '../api';
 import {list, plural, size} from '../format';
+import {shared} from '../dust/vera';
 
 type Dest = 'mail' | 'discord' | 'discord-dm' | 'whatsapp' | 'mail-other' | 'usb';
 type Step = 'books' | 'dest' | 'mail' | 'mail-setup' | 'discord' | 'discord-setup' | 'sending' | 'done';
@@ -76,6 +77,17 @@ export function Share({books: initial, settings, close}: Props) {
   }
 
   const finish = (title: string, text: string) => {setDone({title, text}); setStep('done');};
+  // Sent: once the confirmation has settled, a copy of each book leaves the window as dust.
+  useEffect(() => {
+    if (step !== 'done') return;
+    const t = setTimeout(() => {
+      const box = document.querySelector('.share')?.getBoundingClientRect();
+      const thumbs = [...document.querySelectorAll<HTMLElement>('.share-done .fan > *')].map((el, i) => ({hash: books[i]?.hash ?? '', rect: el.getBoundingClientRect()}));
+      if (box && thumbs.length) void shared(thumbs, new DOMRect(box.right + 60, thumbs[0]!.rect.top - 40, 0, 0), new Map(books.map(b => [b.hash, b])));
+    }, 450);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
   const order: Step[] = ['books', 'dest'];
   const at = order.includes(step) ? order.indexOf(step) + 1 : 3;
 

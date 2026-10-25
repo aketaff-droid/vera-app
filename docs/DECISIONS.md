@@ -67,3 +67,19 @@ Décisions explicites de l’utilisateur, après les maquettes d’une refonte �
 - **Surligner dans la lecture** (2.7, « ajoute aussi la possibilité de surligner ») : revient sur le « pas d’annotations » de la section L. Dans un EPUB, choisir un passage propose quatre couleurs ; toucher un surlignage permet de changer sa couleur, d’ajouter une note ou de le retirer ; un panneau les liste et les exporte en Markdown avec les notes de la Kobo. Gardés dans le catalogue de Vera seulement : jamais dans le fichier du livre, jamais sur la Kobo. Pas encore dans les PDF (pdf.js n’y affiche pas de texte sélectionnable dans Vera).
 - **Collections repliables** dans la barre latérale (chaque collection à sous-collections, et le groupe entier) ; l’état est gardé sur le PC.
 - Publication par la mise à jour depuis Vera (section O), qui sert de premier essai réel de ce cycle ; retour à la 2.5.0 possible en la réinstallant (elle ignore le réglage de thème).
+
+## Q. La poussière de lecture : Vera comme une œuvre (2.8), 25 octobre 2026
+
+Décisions explicites de l’utilisateur (« faire de Vera une œuvre d’art », inspiré de *Gather* de DAO ; « on garde tout et on intègre » après le prototype « Vera, la poussière de lecture ») :
+- **Un seul langage, quatre verbes** : se rassembler, voyager, se disperser, reposer. La poussière est faite de la matière des livres (les pixels de leurs couvertures, leurs couleurs, les passages surlignés), jamais décorative.
+- **Ouverture** : les couvertures se rassemblent en « Vera. », puis chaque grain retombe sur sa couverture (3,3 s la première fois du jour, 1,3 s ensuite ; aussi au retour après 10 minutes sans la fenêtre). Un clic ou une touche n’est jamais bloqué.
+- **Envoi vers la Kobo** : une copie de chaque livre voyage de sa couverture à la Kobo de la barre latérale **pendant l’envoi réel** ; si la Kobo est débranchée, la poussière en vol revient à son livre.
+- **Ouvrir un livre** : la couverture de la fiche devient les lignes de la page, qui se met au point.
+- **Livre terminé** : sa couverture se condense en une étoile qui monte vers le **Ciel de lecture**, nouvelle vue de la barre latérale (étoiles par mois et par collection, constellations, livre en cours en nuage à proportion de sa lecture).
+- **Surligner** : la couleur se pose comme de l’encre, ligne après ligne.
+- **Retirer de la Kobo** : uniquement après le clic de confirmation et la réussite du retrait (section N), les lignes se dispersent.
+- **Partager** : une copie des livres quitte la fenêtre en poussière, une fois l’envoi fait.
+- **Rêverie** : après 4 minutes sans rien toucher devant la bibliothèque, les couvertures se dissolvent et des passages surlignés (dans Vera ou sur la Kobo) se forment, avec leur titre ; n’importe quel geste réveille Vera.
+- **Réglage « Animations artistiques »** (Réglages › Apparence, activé par défaut) ; tout est aussi coupé quand Windows demande moins d’animations. La navigation reste instantanée : pas de poussière sur ce qu’on fait cent fois par jour.
+- Rien de tout cela n’écrit dans le dossier, dans un livre ni sur la Kobo ; les images viennent des vignettes que Vera a déjà faites. Inspirations (Gather de DAO, Refik Anadol) : des idées, aucune interface ni image reprise.
+

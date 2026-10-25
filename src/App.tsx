@@ -17,6 +17,9 @@ import {Sheet} from './components/Sheet';
 import {Settings} from './components/Settings';
 import {Onboarding} from './components/Onboarding';
 import {Tour} from './components/Tour';
+import {DustLayer} from './components/DustLayer';
+import {Sky} from './components/Sky';
+import * as Dust from './dust/vera';
 
 const ROOT = 'Hors collection';
 
@@ -57,6 +60,7 @@ function neighbour(from: HTMLElement, key: string): HTMLElement | null {
 export function App() {
   const [state, setState] = useState<AppState | null>(null);
   const [library, setLibrary] = useState<Library>({books: [], collections: [], twins: []});
+  const [ready, setReady] = useState(false);
   const [sort, setSort] = useState<Sort>(savedSort);
   const [history, setHistory] = useState<View[]>([{kind: 'all'}]);
   const [query, setQuery] = useState('');
@@ -76,7 +80,7 @@ export function App() {
   const lastKobo = useRef<KoboState | null>(null);
   const refresh = useCallback(() => {
     void api.state().then(s => {lastKobo.current = s.kobo; setState(s);}).catch(e => setFailure(e.message));
-    void api.library().then(setLibrary).catch(e => setFailure(e.message));
+    void api.library().then(l => {setLibrary(l); setReady(true);}).catch(e => setFailure(e.message));
   }, []);
 
   useEffect(() => {
@@ -230,6 +234,9 @@ export function App() {
   } else if (view.kind === 'journal') {
     body = <><Toolbar title="Journal" crumb="Réglages" onCrumb={() => go({kind: 'settings'})} appearance={appearance} setAppearance={setAppearance}/>
       <Journal/></>;
+  } else if (view.kind === 'sky') {
+    body = <><Toolbar title="Ciel de lecture" appearance={appearance} setAppearance={setAppearance}/>
+      <Sky books={library.books} open={setOpen}/></>;
   } else if (view.kind === 'authors') {
     const shown = authors.filter(a => !query || matches(query, a.name));
     body = <><Toolbar title="Auteurs" query={query} setQuery={setQuery} appearance={appearance} setAppearance={setAppearance}/>
@@ -281,7 +288,8 @@ export function App() {
     {(touring || !state.settings.toured) && view.kind === 'all' && !open && !reading && !sharing && !selected &&
       <Tour close={() => {setTouring(false); if (!state.settings.toured) void save({...state.settings, toured: true});}}/>}
     {open && <Sheet hash={open} onKobo={state.deviceKnown && !marks.waiting.has(open)} replaceEdited={state.settings.replaceEdited}
-      close={() => setOpen(null)} saved={undo => setToast({text: 'Fiche enregistrée', undo})} read={() => {setReading(open); setOpen(null);}}
+      close={() => setOpen(null)} saved={undo => setToast({text: 'Fiche enregistrée', undo})}
+      read={() => {const b = library.books.find(x => x.hash === open); if (b) void Dust.openBook(b); setReading(open); setOpen(null);}}
       share={() => {setSharing([open]); setOpen(null);}}/>}
     {reviewing && state.kobo.report && state.kobo.report.removable.length > 0 && <Remove items={state.kobo.report.removable} librarySize={library.books.length}
       close={() => setReviewing(false)} removed={n => {setReviewing(false); setToast({text: `${plural(n, 'livre retiré', 'livres retirés')} de la Kobo`});}}/>}
@@ -290,6 +298,7 @@ export function App() {
     {readingBook && <Suspense fallback={null}>
       <Reader book={readingBook} settings={state.settings} save={s => void save(s).catch(e => setToast({text: e.message}))} close={() => {setReading(null); refresh();}}/>
     </Suspense>}
+    <DustLayer state={state} books={library.books} ready={ready} calm={!open && !reading && !sharing && !reviewing && !selected && !touring && state.settings.toured}/>
     {toast && <div className="toast" role="status">{toast.text}
       {toast.undo && <button className="link" onClick={() => {toast.undo?.(); setToast(null);}}>Annuler</button>}</div>}
   </div>;

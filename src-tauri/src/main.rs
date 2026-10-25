@@ -57,6 +57,8 @@ fn main() {
             commands::journal,
             commands::annotations,
             commands::highlights,
+            commands::cover_thumb,
+            commands::passages,
             commands::save_highlight,
             commands::delete_highlight,
             commands::export_annotations,

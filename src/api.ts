@@ -18,6 +18,8 @@ export interface Settings {
   onboarded: boolean;
   /** The guided start was shown (or skipped). */
   toured: boolean;
+  /** The dust animations (« Animations artistiques »). */
+  art: boolean;
   reader: ReaderSettings;
   share: ShareSettings;
 }
@@ -25,6 +27,8 @@ export interface Settings {
 /** A passage highlighted in Vera's reader; kept in Vera's catalogue only. */
 export type HighlightColor = 'jaune' | 'vert' | 'bleu' | 'rose';
 export interface Highlight {id: string; position: string; text: string; color: HighlightColor; note: string; fraction: number; created: number}
+/** A passage for « Vera rêve ». */
+export interface Passage {text: string; title: string; authors: string}
 export interface UpdateInfo {version: string; notes: string | null}
 export interface MailAccount {address: string; server: string; port: number}
 export interface Channel {id: string; name: string}
@@ -70,7 +74,7 @@ export interface Book {
   /** How far it has been read in Vera (0 to 1); null if never opened there. */
   read: number | null;
   /** Where it is on the Kobo, as the liseuse last said: percent 0–100, status 0 not started, 1 reading, 2 finished. */
-  kobo: {percent: number; status: number} | null;
+  kobo: {percent: number; status: number; lastRead: string | null} | null;
   /** Highlights and notes made on the Kobo, kept in Vera. */
   notes: number;
   addedAt: number;
@@ -179,6 +183,8 @@ export const api = {
   journal: () => call<Report[]>('journal'),
   annotations: (hash: string) => call<Annotation[]>('annotations', {hash}),
   highlights: (hash: string) => call<Highlight[]>('highlights', {hash}),
+  coverThumb: (hash: string) => call<ArrayBuffer>('cover_thumb', {hash}),
+  passages: () => call<Passage[]>('passages'),
   saveHighlight: (hash: string, highlight: Highlight) => call<Highlight>('save_highlight', {hash, highlight}),
   deleteHighlight: (hash: string, id: string) => call<void>('delete_highlight', {hash, id}),
   exportAnnotations: (hash: string, title: string, authors: string) => call<string | null>('export_annotations', {hash, title, authors}),
@@ -205,6 +211,6 @@ export const api = {
 };
 
 /// The command names the interface uses; tests/check-interface.mjs checks each is registered in src-tauri.
-export const COMMANDS = ['state', 'library', 'detail', 'save_card', 'lookup', 'save_settings', 'choose_folder', 'suggest_folder', 'sync_now', 'eject', 'kobo_remove', 'update_status', 'update_check', 'update_install', 'reveal', 'open_folder', 'open_data', 'dismiss_twins', 'journal', 'annotations', 'highlights', 'save_highlight', 'delete_highlight', 'export_annotations', 'book_file', 'reading_position', 'save_reading',
+export const COMMANDS = ['state', 'library', 'detail', 'save_card', 'lookup', 'save_settings', 'choose_folder', 'suggest_folder', 'sync_now', 'eject', 'kobo_remove', 'update_status', 'update_check', 'update_install', 'reveal', 'open_folder', 'open_data', 'dismiss_twins', 'journal', 'annotations', 'highlights', 'cover_thumb', 'passages', 'save_highlight', 'delete_highlight', 'export_annotations', 'book_file', 'reading_position', 'save_reading',
   'share_prepare', 'share_targets', 'share_mail_provider', 'share_mail_setup', 'share_mail_forget', 'share_mail_send', 'share_discord_add', 'share_discord_remove',
   'share_discord_send', 'share_copy', 'share_open', 'share_reveal', 'share_save', 'share_guide_open', 'share_guide_recopy', 'share_guide_close'];

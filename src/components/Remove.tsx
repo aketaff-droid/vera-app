@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import {api, type Removable} from '../api';
 import {plural, size, when} from '../format';
+import {disperse} from '../dust/vera';
 
 export function Remove({items, librarySize, close, removed}: {items: Removable[]; librarySize: number; close: () => void; removed: (n: number) => void}) {
   const [chosen, setChosen] = useState(new Set(items.map(i => i.hash)));
@@ -20,7 +21,12 @@ export function Remove({items, librarySize, close, removed}: {items: Removable[]
 
   async function confirm() {
     setBusy(true); setError(null);
-    try {removed(await api.koboRemove([...chosen]));} catch (e) {setError((e as Error).message);} finally {setBusy(false);}
+    try {
+      const n = await api.koboRemove([...chosen]);
+      // What left scatters, once the Kobo has really let it go.
+      disperse([...document.querySelectorAll<HTMLElement>('.remove [data-row]')].filter(el => chosen.has(el.dataset.row!)).map(el => el.getBoundingClientRect()));
+      removed(n);
+    } catch (e) {setError((e as Error).message);} finally {setBusy(false);}
   }
   const toggle = (hash: string) => {
     const next = new Set(chosen);
@@ -37,7 +43,7 @@ export function Remove({items, librarySize, close, removed}: {items: Removable[]
       </div>
       <div className="share-body">
         {many && <p className="share-status warn" role="alert">C’est beaucoup d’un coup : as-tu changé de dossier ou l’as-tu vidé par erreur ? Vérifie ton dossier avant de continuer.</p>}
-        <div className="share-list">{items.map(item => <label key={item.hash} className="share-row">
+        <div className="share-list">{items.map(item => <label key={item.hash} className="share-row" data-row={item.hash}>
           <input type="checkbox" checked={chosen.has(item.hash)} onChange={() => toggle(item.hash)}/>
           <span className="meta"><b>{item.title}</b><span>{item.authors || 'Auteur inconnu'} · parti {when(item.leftAt)}
             {item.percent ? ` · lu à ${item.percent} % sur la Kobo` : ''}{item.notes ? ` · ${plural(item.notes, 'note gardée', 'notes gardées')} dans Vera` : ''}</span></span>

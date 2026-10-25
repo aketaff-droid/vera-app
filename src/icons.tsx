@@ -7,6 +7,7 @@ const Svg = ({size = 16, view = '0 0 20 20', stroke = 1.6, children}: {size?: nu
 /** Vera's app icon: an open book on the accent colour. */
 export const Books = () => <Svg><path d="M3.5 3.5h3v13h-3zM8 3.5h3v13H8z"/><path d="M12.6 4.4l2.9-.8 3 12.5-2.9.8z"/></Svg>;
 export const Stack = () => <Svg><rect x="3" y="7" width="14" height="10" rx="2"/><path d="M5 4.5h10M7 2h6"/></Svg>;
+export const Sky = () => <Svg><path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-4.4L4 8.5l4.4-1.6z"/><path d="M15.5 13v4M13.5 15h4"/></Svg>;
 export const Person = () => <Svg><circle cx="10" cy="7" r="3.2"/><path d="M3.8 17c.8-3.2 3.3-5 6.2-5s5.4 1.8 6.2 5"/></Svg>;
 export const SortIcon = () => <Svg><path d="M6 4v12M3 13l3 3 3-3M14 16V4M11 7l3-3 3 3"/></Svg>;
 export const FolderSmall = () => <Svg><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h3.5l1.6 1.6H16A1.5 1.5 0 0 1 17.5 7v7.5A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5z"/></Svg>;
