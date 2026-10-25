@@ -59,17 +59,21 @@ export function opening({sources, centre, short, reveal, done}: {
     P.set([centre.x + Math.cos(a) * d, centre.y + Math.sin(a) * d * .62, r.x + c.u[j]! * r.width, r.y + c.v[j]! * r.height, c.s[j]! * 1000, word[i * 2]! > stopFrom ? 1 : 0, k, j], i * 8);
   }
   let revealed = false;
-  const scaleT = short ? 2.54 : 1;
+  // Real time → the scene's time: a slower gathering, a pause on the finished word to enjoy it, then the landing.
+  // Full: 2.9 s to form « Vera. », 1.2 s held, 1.7 s to land (5.8 s). Short: 1.2 s, 0.4 s, 0.8 s (2.4 s).
+  const [form, hold, land] = short ? [1.2, .4, .8] : [2.9, 1.2, 1.7];
+  const scene = (time: number) => time < form ? time / form * 1.95 : time < form + hold ? 1.95 : 1.95 + Math.min(1, (time - form - hold) / land) * 1.35;
   return {
-    end: short ? 1.3 : 3.3, grains: N,
+    end: form + hold + land, grains: N,
     done,
     draw(time, emit, stage) {
-      const t = Math.min(3.3, time * scaleT), inkRGB = ink();
+      const t = scene(time), inkRGB = ink();
       stage.veil(1 - ease.inOut(span(t, 2.55, 3.15)));
       if (!revealed && t >= 2.7) {revealed = true; reveal();}
       const toWord = ease.inOut(span(t, .55, 1.65)), toLib = ease.inOut(span(t, 2.05, 3.0)), fade = 1 - ease.inOut(span(t, 2.75, 3.3));
       if (fade <= 0) return;
-      const breath = Math.sin(span(t, 1.88, 2.1) * Math.PI) * .045;
+      // The finished word breathes once, slowly, while it is held.
+      const breath = Math.sin(span(time, form - .1, form + hold + .15) * Math.PI) * .035;
       for (let i = 0; i < N; i++) {
         const o = i * 8, c = clouds[P[o + 6]!]!, j = P[o + 7]!, s = P[o + 4]!;
         const dx = P[o]! + (centre.x - P[o]!) * t * .12, dy = P[o + 1]! + (centre.y - P[o + 1]!) * t * .12;

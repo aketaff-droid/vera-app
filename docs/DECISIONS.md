@@ -72,7 +72,7 @@ Décisions explicites de l’utilisateur, après les maquettes d’une refonte �
 
 Décisions explicites de l’utilisateur (« faire de Vera une œuvre d’art », inspiré de *Gather* de DAO ; « on garde tout et on intègre » après le prototype « Vera, la poussière de lecture ») :
 - **Un seul langage, quatre verbes** : se rassembler, voyager, se disperser, reposer. La poussière est faite de la matière des livres (les pixels de leurs couvertures, leurs couleurs, les passages surlignés), jamais décorative.
-- **Ouverture** : les couvertures se rassemblent en « Vera. », puis chaque grain retombe sur sa couverture (3,3 s la première fois du jour, 1,3 s ensuite ; aussi au retour après 10 minutes sans la fenêtre). Un clic ou une touche n’est jamais bloqué.
+- **Ouverture** : les couvertures se rassemblent en « Vera. », puis chaque grain retombe sur sa couverture (5,8 s la première fois du jour, dont une pause de 1,2 s sur le mot formé, 2,4 s ensuite ; aussi au retour après 10 minutes sans la fenêtre ; ralentie en 2.8.1 : « trop rapide, on n’a pas le temps de savourer »). Un clic ou une touche n’est jamais bloqué.
 - **Envoi vers la Kobo** : une copie de chaque livre voyage de sa couverture à la Kobo de la barre latérale **pendant l’envoi réel** ; si la Kobo est débranchée, la poussière en vol revient à son livre.
 - **Ouvrir un livre** : la couverture de la fiche devient les lignes de la page, qui se met au point.
 - **Livre terminé** : sa couverture se condense en une étoile qui monte vers le **Ciel de lecture**, nouvelle vue de la barre latérale (étoiles par mois et par collection, constellations, livre en cours en nuage à proportion de sa lecture).

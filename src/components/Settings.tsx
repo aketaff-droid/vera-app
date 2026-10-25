@@ -15,7 +15,7 @@ function Segmented<T extends string>({label, value, options, onChange}: {label: 
 
 export function Settings({state, library, save, changeFolder, journal, tour}: {state: AppState; library: Library; save: (s: S) => Promise<void>; changeFolder: () => void; journal: () => void; tour: () => void}) {
   const s = state.settings;
-  const [version, setVersion] = useState('2.8.0');
+  const [version, setVersion] = useState('2.8.1');
   useEffect(() => {if (inTauri) void getVersion().then(setVersion);}, []);
   const folderState = state.folder.error ? 'Introuvable : Google Drive est-il lancé ?'
     : `Surveillé · ${plural(library.books.length, 'livre', 'livres')} · ${plural(library.collections.filter(c => !c.parent).length, 'collection', 'collections')}`;

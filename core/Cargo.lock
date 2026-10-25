@@ -1775,7 +1775,7 @@ dependencies = [
 
 [[package]]
 name = "vera-core"
-version = "2.8.0"
+version = "2.8.1"
 dependencies = [
  "base64 0.22.1",
  "fs4",

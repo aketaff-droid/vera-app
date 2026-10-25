@@ -33,7 +33,7 @@ export async function opening(books: Map<string, Book>) {
   Stage.play(M.opening({sources, centre: {x: content.x + content.width / 2, y: Math.min(innerHeight * .45, content.y + content.height * .42)}, short,
     reveal: () => root().remove('dust-opening'), done: () => root().remove('dust-opening')}));
   // Whatever happens, the library is never left hidden.
-  setTimeout(() => {root().remove('dust-opening'); if (veil && !Stage.busy()) veil.style.opacity = '0';}, 4000);
+  setTimeout(() => {root().remove('dust-opening'); if (veil && !Stage.busy()) veil.style.opacity = '0';}, 7000);
 }
 
 /** A copy on its way to the Kobo: from its cover (or the capsule) to the device in the sidebar. */
